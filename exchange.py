@@ -1,13 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-''' Monitor a basket of currencies relative to the USD and report changes
+"""
+Monitor a basket of currencies relative to the USD and report changes
+
+   python3 exchange.py
+
+    Requires CL_KEY to be set in OS shell environment
 
     See: https://currencylayer.com/documentation
-'''
 
-__author__     = 'Michael E. OConnor'
-__copyright__  = 'Copyright 2018'
+    Public domain by anatoly techtonik <gmikeoc@gmail.com>
+    Also available under the terms of MIT license
+    Copyright (c) 2018 Michael O'Connor
+"""
+
+__version__ = "1.0"
 
 from json import loads
 from os import environ
@@ -25,16 +33,16 @@ cur_col = {
     'red' : '\033[91m',
     'endc' : '\033[0m'
     }
-
-
+    
 class currency_layer:
 
     def __init__(self, key, basket):
-        '''Build URL we will use to get latest exchange rates
-           Args:
-             key = Access Key provided when siging up for CUrrencyLayer Account
-             basket = Tuple of comma separated currency abbreviations
-        '''
+        """Build URL we will use to get latest exchange rates
+
+        Args:
+          key - Access Key provided when siging up for CUrrencyLayer Account
+          basket - Tuple of comma separated currency abbreviations
+        """
 
         base_url = 'http://www.apilayer.net/api/live?'
         self.cl_url = base_url + 'access_key=' + key + '&currencies='
@@ -43,9 +51,9 @@ class currency_layer:
             self.cl_url += c + ','       # OK to leave trailing ','
 
     def validate(self, url):
-        '''Open URL, read response and confirm query was successful. Othewise
-           exit the program with hopefully helpful diagnostics.
-        '''
+        """Open URL, read response and confirm query was successful. Otherwise
+        exit the program with hopefully helpful diagnostics.
+        """
 
         try:
             webUrl = urlopen (url)
@@ -65,10 +73,9 @@ class currency_layer:
             return (rate_json)
 
     def monitor(self, interval):
-        '''At provided interval, query quote data, watch for changes and output
-           updated results to system console.
-        '''
-
+        """At specified interval, query exchange data, watch for changes
+        and output updated results to system console.
+        """
         first_pass = True
 
         while True:
@@ -132,22 +139,25 @@ class currency_layer:
 
             sleep (interval)              # Take 5 before trying again
 
-# Timestamp utility function to read and format current date and time
 
 def t_stamp():
+    """Timestamp utility function to read and format current date and time"""
     _time=strftime('%y-%m-%d %H:%M %Z', localtime(time()))
     return (_time)
 
-# Signal handler for CTRL-C manual termination
 
 def signal_handler(signal, frame):
+    """Signal handler for CTRL-C manual termination"""
     print(cur_col['endc'] + '\nProgram terminated manually', '', '\n')
     raise SystemExit()
 
 
 def main():
-
-    # Read API key from from os.environ(), exit if not set
+    """
+    Read API key from from os.environ(), exit if not set. Define basket of
+    currencies we wish to monitor. Set monitoring interval, instantiate
+    currency module and invoke monitoring method.
+    """
 
     try:
         key = environ['CL_KEY']
@@ -156,20 +166,17 @@ def main():
         print('Command: export CL_KEY=<key value>')
         raise SystemExit()
 
-    # Define basket of currencies we want to track
-
     basket = ('EUR', 'GBP', 'CNY', 'CAD', 'AUD', 'JPY')
 
     interval = 60 * 60
-
-    # Instantiate currency_layer as c and invoke monitoring method
 
     c = currency_layer(key, basket)
     c.monitor(interval)
 
 
-# If called from shell as script
-
 if __name__ == '__main__':
+    """When invoked from shell, call signal() to handle CRTL-C from user
+       and invoke main() function
+    """
     signal(SIGINT, signal_handler)
     main()
