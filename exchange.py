@@ -33,7 +33,7 @@ cur_col = {
     'red' : '\033[91m',
     'endc' : '\033[0m'
     }
-    
+
 class currency_layer:
 
     def __init__(self, key, basket):
@@ -156,7 +156,8 @@ def main():
     """
     Read API key from from os.environ(), exit if not set. Define basket of
     currencies we wish to monitor. Set monitoring interval, instantiate
-    currency module and invoke monitoring method.
+    currency_layer() object and invoke monitoring() method with desired
+    interval.
     """
 
     try:
@@ -168,7 +169,7 @@ def main():
 
     basket = ('EUR', 'GBP', 'CNY', 'CAD', 'AUD', 'JPY')
 
-    interval = 60 * 60
+    interval = 60 * 60          # In seconds
 
     c = currency_layer(key, basket)
     c.monitor(interval)
