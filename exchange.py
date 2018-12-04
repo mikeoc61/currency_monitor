@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 
 """
-Monitor a basket of currencies relative to the USD and report changes
+Monitor a basket of currencies relative to the USD and highlight changes
 
-   python3 exchange.py
+    > python3 exchange.py
 
-    Requires CL_KEY to be set in OS shell environment
+    ** Requires CL_KEY to be set in OS shell environment **
 
     See: https://currencylayer.com/documentation
 
-    Public domain by anatoly techtonik <gmikeoc@gmail.com>
+    Public domain by Michael OConnor <gmikeoc@gmail.com>
     Also available under the terms of MIT license
     Copyright (c) 2018 Michael O'Connor
 """
 
-__version__ = "1.0"
+__version__ = "1.1"
 
 from json import loads
 from os import environ
@@ -51,8 +51,8 @@ class currency_layer:
             self.cl_url += c + ','       # OK to leave trailing ','
 
     def validate(self, url):
-        """Open URL, read response and confirm query was successful. Otherwise
-        exit the program with hopefully helpful diagnostics.
+        """Open URL, read and decode JSON formatted response and confirm query
+        was successful. If not, exit the program with some helpful diagnostics.
         """
 
         try:
@@ -61,16 +61,16 @@ class currency_layer:
             print ("Error: Not able to open: {}".format(url))
             raise SystemExit()
 
-        rate_data = webUrl.read()
-        rate_json = loads(rate_data.decode('utf-8'))
-        if rate_json['success'] == False:
+        rate_json = webUrl.read()
+        rate_dict = loads(rate_json.decode('utf-8'))
+        if rate_dict['success'] == False:
             print('Error: code = {}, type = {}, \ninfo = {}'.format(
-                rate_json['error']['code'],
-                rate_json['error']['type'],
-                rate_json['error']['info']))
+                rate_dict['error']['code'],
+                rate_dict['error']['type'],
+                rate_dict['error']['info']))
             raise SystemExit()
         else:
-            return (rate_json)
+            return (rate_dict)
 
     def monitor(self, interval):
         """At specified interval, query exchange data, watch for changes
@@ -82,23 +82,23 @@ class currency_layer:
 
             # Open URL provided, read data and onfirm quote data is valid
 
-            rate_json = self.validate(self.cl_url)
+            rates = self.validate(self.cl_url)
 
             # Calculate hash on quote data structure and use to detect changes
 
-            quote_hash = sha1(str(rate_json['quotes']).encode("ascii")).hexdigest()
+            quote_hash = sha1(str(rates['quotes']).encode("ascii")).hexdigest()
 
             # 1st time through initialize variables and display current rates
 
             if first_pass:
                 print('{} Begin monitoring'.format(t_stamp()))
                 prev_hash = quote_hash
-                prev_quote = rate_json['quotes']
+                prev_quote = rates['quotes']
                 for exch, cur_rate in prev_quote.items():
-                    s = exch[-3:] + '/USD'
-                    t = 'USD/' + exch[3:]
-                    print('{} : {:>8.5f}   {} : {:>9.5f}'.format(
-                           s, 1/cur_rate, t, cur_rate))
+                    in_usd = exch[-3:] + '/USD'
+                    in_for = 'USD/' + exch[3:]
+                    print('{}: {:>8.5f}   {}: {:>9.5f}'.format(
+                           in_usd, 1/cur_rate, in_for, cur_rate))
                 first_pass = False
                 continue
 
@@ -111,7 +111,7 @@ class currency_layer:
 
                 print('\n' + t_stamp() + ': Change(s) detected\n')
 
-                for exch, cur_rate in rate_json['quotes'].items():
+                for exch, cur_rate in rates['quotes'].items():
 
                     prev_rate = prev_quote[exch]
                     delta = abs((1 - (cur_rate / prev_rate)) * 100)
@@ -125,14 +125,15 @@ class currency_layer:
 
                     # Display both 'Foreign/USD' and 'USD/Foreign' results
 
-                    s = exch[-3:] + '/USD'
-                    t = 'USD/' + exch[3:]
-                    print('{}{} : {:>8.5f}   {} : {:>9.5f}   {:>5.2f}%'.format(
-                           cur_col[color], s, 1/cur_rate, t, cur_rate, delta))
+                    in_usd = exch[-3:] + '/USD'
+                    in_for = 'USD/' + exch[3:]
+                    print('{}{}: {:>8.5f}   {}: {:>9.5f}   {:>5.2f}%'.format(
+                           cur_col[color], in_usd, 1/cur_rate,
+                           in_for, cur_rate, delta))
 
                 print(cur_col['endc'])
                 prev_hash = quote_hash
-                prev_quote = rate_json['quotes']
+                prev_quote = rates['quotes']
 
             else:
                 print('{} No change'.format(t_stamp()))
