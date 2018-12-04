@@ -1,22 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Monitor a basket of currencies relative to the USD and highlight changes
-
-    > python3 exchange.py
-
-    ** Requires CL_KEY to be set in OS shell environment **
-
-    See: https://currencylayer.com/documentation
-
-    Public domain by Michael OConnor <gmikeoc@gmail.com>
-    Also available under the terms of MIT license
-    Copyright (c) 2018 Michael O'Connor
-"""
-
-__version__ = "1.1"
-
 from json import loads
 from os import environ
 from hashlib import sha1
@@ -24,46 +8,63 @@ from signal import signal, SIGINT
 from urllib.request import urlopen
 from time import sleep, time, strftime, localtime
 
-# Ascii sequences used to control console terminal display colors
+"""Monitor basket of currencies relative to the USD and highlight changes
 
+    > python3 exchange.py
+
+    **Note: Requires CL_KEY to be set in OS shell environment
+
+    See: https://currencylayer.com/documentation
+
+    Public domain by Michael OConnor <gmikeoc@gmail.com>
+    Also available under the terms of MIT license
+    Copyright (c) 2018 Michael E. O'Connor
+"""
+
+__version__ = "1.2"
+
+# Ascii sequences used to control console terminal display colors
 cur_col = {
-    'blue' : '\033[94m',
-    'green' : '\033[92m',
-    'yellow' : '\033[93m',
-    'red' : '\033[91m',
-    'endc' : '\033[0m'
+    'blue': '\033[94m',
+    'green': '\033[92m',
+    'yellow': '\033[93m',
+    'red': '\033[91m',
+    'endc': '\033[0m'
     }
 
-class currency_layer:
 
+class currency_layer:
     def __init__(self, key, basket):
         """Build URL we will use to get latest exchange rates
 
         Args:
-          key - Access Key provided when siging up for CUrrencyLayer Account
-          basket - Tuple of comma separated currency abbreviations
+            key - Access Key provided when siging up for CUrrencyLayer Account
+            basket - Tuple of comma separated currency abbreviations
         """
-
         base_url = 'http://www.apilayer.net/api/live?'
         self.cl_url = base_url + 'access_key=' + key + '&currencies='
 
         for c in basket:
             self.cl_url += c + ','       # OK to leave trailing ','
 
-    def validate(self, url):
+    def get_rates(self, url):
         """Open URL, read and decode JSON formatted response and confirm query
         was successful. If not, exit the program with some helpful diagnostics.
-        """
 
+        Args:
+            - url: fully formed URL we want to open and process results from
+        """
         try:
-            webUrl = urlopen (url)
+            webUrl = urlopen(url)
         except:
-            print ("Error: Not able to open: {}".format(url))
+            print("Error: Not able to open: {}".format(url))
             raise SystemExit()
 
         rate_json = webUrl.read()
         rate_dict = loads(rate_json.decode('utf-8'))
-        if rate_dict['success'] == False:
+
+        # Check to see if response if valid and display error info if not
+        if rate_dict['success'] is False:
             print('Error: code = {}, type = {}, \ninfo = {}'.format(
                 rate_dict['error']['code'],
                 rate_dict['error']['type'],
@@ -73,46 +74,52 @@ class currency_layer:
             return (rate_dict)
 
     def monitor(self, interval):
-        """At specified interval, query exchange data, watch for changes
-        and output updated results to system console.
+        """Query currency exchange data and output results to system console.
+        For each query, compare current time with timestamp of last quote and
+        use the delta to adjust delay until next query.
+
+        Args:
+            - interval: Desired query interval in minutes (typically 60)
         """
         first_pass = True
 
         while True:
-
             # Open URL provided, read data and onfirm quote data is valid
-
-            rates = self.validate(self.cl_url)
+            rates = self.get_rates(self.cl_url)
 
             # Calculate hash on quote data structure and use to detect changes
-
             quote_hash = sha1(str(rates['quotes']).encode("ascii")).hexdigest()
 
-            # 1st time through initialize variables and display current rates
+            # Determine number of minutes between last quote and current time
+            quote_time = rates['timestamp']
+            quote_delay = (time()-quote_time) / 60
 
+            # 1st time through initialize variables and display current rates
+            # then loop back to top of while() loop
             if first_pass:
                 print('{} Begin monitoring'.format(t_stamp()))
                 prev_hash = quote_hash
                 prev_quote = rates['quotes']
+
+                print('Quotes Valid as of {}\n'.format(t_stamp(quote_time)))
+
                 for exch, cur_rate in prev_quote.items():
                     in_usd = exch[-3:] + '/USD'
                     in_for = 'USD/' + exch[3:]
                     print('{}: {:>8.5f}   {}: {:>9.5f}'.format(
                            in_usd, 1/cur_rate, in_for, cur_rate))
                 first_pass = False
+
                 continue
 
-            # Compare hashs to determine if change has occured and, if so, display
-            # exchange rates, including % of change, using color coding such that
-            # a relative increase in USD strength is green, a decrease is red and
-            # no change is output in yellow text.
-
+            # Compare hashs to determine if change has occured and, if so,
+            # display exchange rates, including % of change, using color coding
+            # such that a relative increase in USD strength is green,
+            # a decrease is red and no change is output in yellow text.
             if quote_hash != prev_hash:
-
                 print('\n' + t_stamp() + ': Change(s) detected\n')
 
                 for exch, cur_rate in rates['quotes'].items():
-
                     prev_rate = prev_quote[exch]
                     delta = abs((1 - (cur_rate / prev_rate)) * 100)
 
@@ -135,16 +142,32 @@ class currency_layer:
                 prev_hash = quote_hash
                 prev_quote = rates['quotes']
 
-            else:
-                print('{} No change'.format(t_stamp()))
+            # Use time delta between current time and last quote time to
+            # calculate number of minutes to wait until next query. Display
+            # progress bar to mark passage of time
 
-            sleep (interval)              # Take 5 before trying again
+            wait_time = int(interval - quote_delay)
+            print('\nNext query in {} minutes '.format(wait_time), end='')
+            tbar_sleep(wait_time)
 
 
-def t_stamp():
-    """Timestamp utility function to read and format current date and time"""
-    _time=strftime('%y-%m-%d %H:%M %Z', localtime(time()))
-    return (_time)
+def t_stamp(t=time()):
+    """Timestamp utility function to format date and time from passed UNIX
+    time value or from local data/time if no value provided.
+    """
+    return(strftime('%y-%m-%d %H:%M %Z', localtime(t)))
+
+
+def tbar_sleep(width):
+    """Create a progress bar to mark passage of time in minutes"""
+    print('[' + '-'*width, end=']', flush=True)
+    for i in range(width+1):
+        print('\b', end='', flush=True)
+        sleep(0.02)
+    for i in range(width):
+        sleep(60)
+        print(u'\u2588', end='', flush=True)    # Display BLOCK character
+    print('\n')
 
 
 def signal_handler(signal, frame):
@@ -170,7 +193,7 @@ def main():
 
     basket = ('EUR', 'GBP', 'CNY', 'CAD', 'AUD', 'JPY')
 
-    interval = 60 * 60          # In seconds
+    interval = 60        # In minutes
 
     c = currency_layer(key, basket)
     c.monitor(interval)
