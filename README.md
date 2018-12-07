@@ -5,7 +5,7 @@ Monitors basket of foreign currencies for changes relative to USD and displays c
    to the console (terminal).
 
  - lambda.py is a simplified version for AWS lambda that runs once and returns
-   results as a formatted Web page. Program uses HTML, CSS and Javascsript.
+   results as a formatted Web page. Program uses HTML, CSS and Javascript.
 
 ## Dependencies:
 
