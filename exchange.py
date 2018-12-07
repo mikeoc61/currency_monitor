@@ -97,11 +97,11 @@ class currency_layer:
             # 1st time through initialize variables and display current rates
             # then loop back to top of while() loop
             if first_pass:
-                print('{} Begin monitoring'.format(t_stamp()))
+                print('{} Begin monitoring'.format(t_stamp(time())))
                 prev_hash = quote_hash
                 prev_quote = rates['quotes']
 
-                print('Quotes Valid as of {}\n'.format(t_stamp(quote_time)))
+                print('Last quote updated: {}\n'.format(t_stamp(quote_time)))
 
                 for exch, cur_rate in prev_quote.items():
                     in_usd = exch[-3:] + '/USD'
@@ -117,7 +117,8 @@ class currency_layer:
             # such that a relative increase in USD strength is green,
             # a decrease is red and no change is output in yellow text.
             if quote_hash != prev_hash:
-                print('\n' + t_stamp() + ': Change(s) detected\n')
+                print('\n {}: Change(s) detected\n'.format(t_stamp(time())))
+                print(t_stamp(time()))
 
                 for exch, cur_rate in rates['quotes'].items():
                     prev_rate = prev_quote[exch]
@@ -131,29 +132,28 @@ class currency_layer:
                         color = 'red'               # Weaker USD
 
                     # Display both 'Foreign/USD' and 'USD/Foreign' results
-
                     in_usd = exch[-3:] + '/USD'
                     in_for = 'USD/' + exch[3:]
                     print('{}{}: {:>8.5f}   {}: {:>9.5f}   {:>5.2f}%'.format(
                            cur_col[color], in_usd, 1/cur_rate,
                            in_for, cur_rate, delta))
 
-                print(cur_col['endc'])
+                print(cur_col['endc'], end='')  # Return cursor color to orig
                 prev_hash = quote_hash
                 prev_quote = rates['quotes']
 
             # Use time delta between current time and last quote time to
             # calculate number of minutes to wait until next query. Display
-            # progress bar to mark passage of time
-
-            wait_time = int(interval - quote_delay)
+            # progress bar to mark passage of time. If for some reason, delay
+            # is greater than interval, use absolute value of time delta
+            wait_time = int(abs(interval - quote_delay))
             print('\nNext query in {} minutes '.format(wait_time), end='')
             tbar_sleep(wait_time)
 
 
-def t_stamp(t=time()):
-    """Timestamp utility function to format date and time from passed UNIX
-    time value or from local data/time if no value provided.
+def t_stamp(t):
+    """Timestamp utility formats date and time from provided UNIX style
+    time value.
     """
     return(strftime('%y-%m-%d %H:%M %Z', localtime(t)))
 
