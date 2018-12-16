@@ -1,0 +1,97 @@
+/*
+  CSS Styles for Currency Exchange program
+  Last Update: 12/14/18
+
+  - Add "vertical-align: middle;" to button, form and input elements
+*/
+
+body {
+    background-color: #d9d9d9;
+    width: 90vw; margin: 0 auto;
+    min-width: min-content;
+    min-height: min-content;
+    }
+
+pre {
+  font-size: 2.5vmin;
+  font-family:Consolas,monospace;
+  padding: .5vh 5px; margin: 1vh 0;
+  }
+
+p {
+  text-align:center; font-size: 2.2vmin;
+  padding: .5vh .3vw; margin: 1vh .3vw;
+  font-family:Arial, verdana; font-weight:300;
+  }
+
+h1 {
+  font-size: 5.0vmin; font-family: Arial, verdana;
+  text-align: center; text-decoration: none;
+  }
+h2 {
+  font-size: 3.4vmin; font-family:Arial, verdana;
+  text-align: center; text-decoration: underline;
+  color: #d9b826;
+  }
+h3 {
+  font-size: 2.8vmin; font-family:Arial, verdana;
+  text-align: center; text-decoration: underline;
+  color: #d9b826;
+  }
+
+.center {
+  margin: 5px 2px;
+  padding: 1px;
+  text-align: center;
+  line-height: 0.4;
+  border: 2px solid #fece00;
+  color: white;
+  background-color: #5600bb;
+  outline: 1px solid gray;
+  outline-offset: 5px;
+  border-radius: 10px;
+}
+
+.button {
+  padding: .2em .4em;
+  margin: .3em .4em;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 2.5vmin;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline;
+  text-decoration: none;
+  font-family: Arial, verdana;
+  transition: all 0.25s;
+  color: black;
+  background-color: #d9b826;
+  border: 1px solid black;
+}
+
+.button:hover{color:white; border-color:#d9b826;}
+.button:hover{background-color:#5600bb;}
+
+.myForm {
+  padding: .2em .5em .2em .5em;
+  margin: .3em .5em;
+  font-size: 3vmin;
+  font-family: Arial, verdana;
+  text-align: center;
+  vertical-align: middle;
+  line-height: .8;
+  display: inline;
+  text-decoration: none;
+  color: #d9b826;
+  background-color: #5600bb;
+  }
+
+input[type=number] {
+  font-size: 2.8vmin; font-family: Arial, verdana;
+  width: 3.2em;
+  margin: .3em .5em;
+  padding: .1em;
+  vertical-align: middle;
+  border: 1px solid gray;
+  background-color: #5600bb; color: white;
+  }
