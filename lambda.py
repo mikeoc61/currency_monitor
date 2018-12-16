@@ -1,4 +1,4 @@
-from json import loads, dumps
+from json import loads
 from urllib.request import urlopen
 from time import time, strftime, localtime
 from currencies import curr_abbrs
@@ -27,9 +27,9 @@ class currency_layer:
         if mode == 'list':
             self.cl_url = base + 'list?' + 'access_key=' + key
         elif mode == 'live':
-            self.cl_url = base + 'live?' + 'access_key=' + key + '&currencies='
-            for c in basket:
-                self.cl_url += c + ','       # OK to leave trailing ','
+            self.cl_url = base + 'live?' + 'access_key=' \
+                          + key + '&currencies=' + basket
+
 
     def cl_validate(self, url):
         """Attempt to open supplied URL. If initial open is successful, read
@@ -51,26 +51,56 @@ class currency_layer:
                 return rate_dict
 
 
-    def get_rates(self):
+    def get_rates(self, spread):
         '''Loop through exchange rate raw data and returned formatted HTML'''
 
         rates = self.cl_validate(self.cl_url)
+        spread = float(spread)
 
         if isinstance(rates, str):                  # cl_validate returned Error
             rate_html = "<p>" + rates + "</p>"
         elif isinstance(rates, dict):               # cl_validate returned data
             ts = t_stamp(rates['timestamp'])
-            rate_html = "<h2>Rates as of " + ts + "</h2>"
+            rate_html = "<h2>As of " + ts + "</h2>"
+
+            # Create Form to enable manipulation of Spread within a range
+            # This approach also provide input validation to user
+
+            rate_html += "<div id='inputs' class='myForm' text-align: center>"
+            rate_html += "<form id='spread_form' action='#' "
+            rate_html +=   "onsubmit=\"changeSpread('text');return false\">"
+            rate_html += "<label for='spread_label'>Spread:  </label>"
+            rate_html += "<input id='spread_input' type='number' min='.10' \
+                                 max='2.0' step='.05' size='4' maxlength='4' \
+                                 value='{:3.2f}'>".format(spread)
+            rate_html += "<input type='submit' class='button'>"
+            rate_html += "</form></div>"
+
+            spread = spread / 100                    # convert to percentage
             rate_html += "<br>"
             for exch, cur_rate in rates['quotes'].items():
                 in_usd = exch[-3:] + '/USD'
                 in_for = 'USD/' + exch[3:]
-                rate_html += "<pre>{}: {:>10.5f}   {}: {:>9.5f}</pre>".format(
-                              in_usd, 1/cur_rate, in_for, cur_rate)
+                usd_spread = (1/cur_rate)*(1+spread)
+                for_spread = cur_rate*(1/(1+spread))
+                _usd = "{}: {:>8.4f} ({:>8.4f})   {}: {:>7.4f} ({:>6.4f})".format(
+                        in_usd, 1/cur_rate, usd_spread,
+                        in_for, cur_rate, for_spread)
+                _for = "{}: {:>8.4f} ({:>8.4f})   {}: {:>7.4f} ({:>6.4f})".format(
+                        in_for, cur_rate, for_spread,
+                        in_usd, 1/cur_rate, usd_spread)
+
+                if exch[3:] in ['EUR', 'GBP', 'AUD']:
+                    rate_html += "<pre>" + _usd + "</pre>"
+                else:
+                    rate_html += "<pre>" + _for + "</pre>"
+
+            rate_html += "<br>"
         else:
             rate_html = "<p>Expected string or dict in get_rates()<p>"
 
         return rate_html
+
 
 def get_list(basket):
     '''Loop through basket of currency abbreviations and return with definitions
@@ -79,19 +109,21 @@ def get_list(basket):
 
     rate_html = "<h2>Abbreviations</h2>"
 
-    for abbr in basket:
+    basket_list = basket.split(',')
+
+    for abbr in basket_list:
         if abbr in curr_abbrs:
             rate_html += "<p>{} = {}</p>".format(abbr, curr_abbrs[abbr])
         else:
             rate_html += "<p>{} = {}</p>".format(
                           abbr.upper(), "Sorry, have no idea!")
 
+    rate_html += "<br>"
     return rate_html
 
 
 def t_stamp(t):
-    """Timestamp utility function to format date and time from passed UNIX time
-    """
+    """Timestamp utility function to format date and time from passed UNIX time"""
     return(strftime('%y-%m-%d %H:%M %Z', localtime(t)))
 
 
@@ -101,51 +133,31 @@ def build_resp(event):
        improved readability
     '''
 
-    html_head = "<!DOCTYPE html>"
-    html_head += "<head>"
-    html_head += "<title>Display Currency Exchange Rates</title>"
-    html_head += "<style>"
+    # Define key variables defaults associated with CurrencyLayer web service
 
-    html_head += ".button {color: black; background-color: #93B874;}"
-    html_head += ".button {padding: 5px 20px; margin: 4px 2px;}"
-    html_head += ".button {text-align: center; font-size: 12pt;}"
-    html_head += ".button {border-radius: 5px; cursor: pointer;}"
-    html_head += ".button {border: 2px solid green;}"
-    html_head += ".button {display: inline-block; text-decoration: none;}"
-
-    html_head += ".center {text-align: center; font-size: 11pt;}"
-    html_head += ".center {line-height: 0.5;}"
-    html_head += ".center {border: 3px solid green;}"
-    html_head += ".center {border-radius: 10px; padding: 2px;}"
-
-    html_head += "body {background-color: #93B874;}"
-    html_head += "body {width: 400px; margin: 0 auto;}"
-
-    html_head += "h1 {text-align: center; text-decoration: none;}"
-    html_head += "h2 {text-align: center; text-decoration: underline;}"
-    html_head += "h3 {text_align: center; text-decoration: underline;}"
-
-    html_head += "</style>"
-    html_head += "</head>"
-
-    # Define key variables associated with CurrencyLayer API web service
-
-    cl_key = '<--- Your Code Goes Here --->'
+    cl_key = '<-- Your CL Access Key Here -->'
     base = 'http://www.apilayer.net/api/'
-    mode = 'list'
-    basket = ['EUR', 'GBP', 'CNY', 'CAD', 'AUD', 'BTC']
+    mode = 'list'                           # Use List mode (not implemented)
+    basket = 'EUR,GBP,JPY,CHF,AUD,CAD'      # Default Currency basket
+    api_spread = 1.0                        # Default spread = 1.0%
 
-    # If options passed as URL parameters, loop creating basket of currenciies
+    # If options passed as URL parameters replace default values accordingly
 
     try:
         options = event['params']['querystring']
     except:
         options = False
     else:
-        for key, v in options.items():
+        for key, val in options.items():
             if key.lower() == "currencies":
-                if v:
-                    basket = v.split(',')
+                if val:
+                     basket = val
+            if key.lower() == "spread":
+                if val:
+                    api_spread = val
+
+    logger.info('Basket: {}'.format(basket))
+    logger.info('Spread: {}'.format(api_spread))
 
     # Instantiate currency_layer() object and initialize valiables
 
@@ -154,45 +166,92 @@ def build_resp(event):
     except:
         rates = "<p>Error: unable to instantiate currency_layer()"
     else:
-        rates = c.get_rates()
+        rates = c.get_rates(api_spread)
+
+    logger.info('Rates: {}'.format(rates))
+
+    # Variables used by Javascript routines to refresh page content
+
+    api_params = '\u003F{}{}'.format('currencies=', basket)
+
+    html_head = "<!DOCTYPE html>"
+    html_head += "<head>"
+    html_head += "<title>Display Currency Exchange Rates</title>"
+    html_head += "<meta charset='utf-8'>"
+    html_head += "<meta name='viewport' content='width=device-width'>"
+
+    # Stop annoying favicon.ico download attempts / failure
+    html_head += "<link rel='icon' href='data:,'>"
+
+    # Import CSS style config from publically readable S3 bucket
+    html_head += "<link rel='stylesheet' type='text/css' media='screen'"
+    html_head += "href='https://s3.amazonaws.com/mikeoc.me/CSS/Currency/main.css'>"
+    html_head += "</head>"
 
     html_body = "<body>"
     html_body += "<h1>Currency Exchange Rates</h1>"
 
-    # Add a refresh button
-
-    html_body += "<div align = center>"
-    html_body += "<button class='button' onclick='location.reload();'>"
-    html_body += "Refresh Page"
-    html_body += "</button></div><br>"
-
     # Output list of currency exchange rates
-
-    html_body += "<div class=center>"
-    html_body += rates
-    html_body += "</div>"
-
-    html_body += "<br>"
+    html_body += "<div class='center'>"
+    html_body +=    "<div style='display: inline;'>"
+    html_body +=        rates
+    html_body +=    "</div>"
+    html_body +=    "<br>"
 
     # Output list of currency definitions
+    html_body +=    "<div style='display: inline;'>"
+    html_body +=        get_list(basket)
+    html_body +=    "</div>"
 
-    html_body += "<div class=center>"
-    html_body += get_list(basket)
+    # Provide button to reset currency basket and spread to default
+    html_body +=    "<div style='display: inline;'>"
+    html_body +=        "<button class='button' onclick='resetDefaults()'>"
+    html_body +=        "Reset Currencies and Spread"
+    html_body +=        "</button>"
+    html_body +=        "<br>"
+    html_body +=    "</div>"
+
     html_body += "</div>"
+    html_body += "<br>"
+    html_body += "</body>"
 
-    # Add a button to point to GitHub package
+    # Note the following section should ideally be moved to a separate file on
+    # S3 similar to what was done with the CSS stylesheeet. Given the small
+    # amount of Javascript code and the need to enforce strict JS loading with
+    # approximately the same amount of JS, decision is to leave inline for now
 
-    html_body += "<br><div align = center>"
-    html_body += "<button class='button' onclick=onlick='#'>"
-    html_body += "<a href='https://github.com/mikeoc61/currency_monitor'>"
-    html_body += "View Project on GitHub"
-    html_body += "</button></div>"
+    html_js = "<script type='text/javascript'>"
+    html_js += "'use strict';"
 
-    html_body += '</body>'
+    html_js += "var _spread = {:3.1f};".format(float(api_spread))
+    html_js += "var _base = getURIbase() + '{}';".format(api_params)
 
+    html_js += "function getURIbase() {"
+    html_js +=    "var getUrl = window.location;"
+    html_js +=    "var baseUrl = getUrl.origin + getUrl.pathname;"
+    html_js +=    "return baseUrl"
+    html_js +=    "}"
+
+    html_js += "function resetDefaults() {"
+    html_js +=    "location.replace(getURIbase());"
+    html_js +=    "return false;"
+    html_js +=    "}"
+
+    html_js += "function changeSpread(action) {"
+    html_js +=    "var _val = document.getElementById('spread_input').value;"
+    html_js +=    "if (action == 'text') {"
+    html_js +=        "_spread = parseFloat(_val);"
+    html_js +=        "var _url = `${_base}\u0026spread=${_spread.toFixed(2)}`;"
+    html_js +=        "location.replace(`${_url}`);"
+    html_js +=    "} else {"
+    html_js +=        "alert('Error: action = ' + action);"
+    html_js +=        "}"
+    html_js +=    "}"
+
+    html_js += "</script>"
     html_tail = '</html>'
 
-    resp = html_head + html_body + html_tail
+    resp = html_head + html_body + html_js + html_tail
 
     return resp
 
@@ -200,6 +259,6 @@ def build_resp(event):
 def lambda_handler(event, context):
     print("In lambda handler")
 
-    logger.info('Event: {}'.format(event));
+    logger.info('Event: {}'.format(event))
 
     return(build_resp(event))
