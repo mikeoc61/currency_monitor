@@ -134,9 +134,9 @@ def build_select(basket):
     select_html += "<form id='currency_form' action='#' "
     select_html += "onsubmit=\"addCurrency('text');return false\">"
 
-    select_html += "<label for='select_label'>Add: </label>"
+    select_html += "<label for='select_label'></label>"
     select_html += "<select id='currency_abbr' type='text' name='abbrSelect'>"
-    select_html += "<option disabled selected value> select currency </option>"
+    select_html += "<option disabled selected value>  Add Currency </option>"
 
     for abbr in curr_abbrs:
         if abbr not in basket_list:
@@ -165,7 +165,7 @@ def build_resp(event):
 
     # Define key variables defaults associated with CurrencyLayer web service
 
-    cl_key = '<--Your CL Access Code Here -->'
+    cl_key = '<-- Currency Layer Access Key -->'
     base = 'http://www.apilayer.net/api/'
     mode = 'list'                           # Use List mode (not implemented)
     basket = 'EUR,GBP,JPY,CHF,AUD,CAD'      # Default Currency basket
@@ -223,22 +223,22 @@ def build_resp(event):
 
     # Output list of currency exchange rates
     html_body += "<div class='center'>"
-    html_body +=    "<div style='display: inline;'>"
+    html_body +=    "<div>"
     html_body +=        rates
     html_body +=    "</div>"
 
     # Add a new currency to basket
-    html_body +=    "<div style='display: inline;'>"
+    html_body +=    "<div>"
     html_body +=        build_select(basket)
     html_body +=    "</div>"
 
     # Output list of currency definitions
-    html_body +=    "<div style='display: inline;'>"
+    html_body +=    "<div>"
     html_body +=        get_list(basket)
     html_body +=    "</div>"
 
     # Provide button to reset currency basket and spread to default
-    html_body +=    "<div style='display: inline;'>"
+    html_body +=    "<div>"
     html_body +=        "<button class='button' onclick='resetDefaults()'>"
     html_body +=        "Reset Currencies and Spread"
     html_body +=        "</button>"

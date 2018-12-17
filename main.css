@@ -12,8 +12,13 @@ body {
     min-height: min-content;
     }
 
+div {
+    display: block;
+    }
+
 pre {
   font-size: 2.5vmin;
+  text-align:center;
   font-family:Consolas,monospace;
   padding: .5vh 5px; margin: 1vh 0;
   }
@@ -73,13 +78,11 @@ h3 {
 .button:hover{background-color:#5600bb;}
 
 .myForm {
-  padding: .2em .5em .2em .5em;
   margin: .3em .5em;
   font-size: 3vmin;
   font-family: Arial, verdana;
   text-align: center;
   vertical-align: middle;
-  line-height: .8;
   display: inline;
   text-decoration: none;
   color: #d9b826;
@@ -87,11 +90,40 @@ h3 {
   }
 
 input[type=number] {
-  font-size: 2.8vmin; font-family: Arial, verdana;
+  font-size: 2.8vmin;
+  font-family: Arial, verdana;
+  display: inline;
   width: 3.2em;
   margin: .3em .5em;
   padding: .1em;
   vertical-align: middle;
   border: 1px solid gray;
-  background-color: #5600bb; color: white;
+  border-radius: 5px;
+  color: white;
+  background-color: #5600bb;
   }
+
+input[type=text] {
+  font-size: 2.8vmin;
+  font-family: Arial, verdana;
+  display: inline;
+  margin: .3em .5em;
+  padding: .1em;
+  vertical-align: middle;
+  text-align: center;
+  border: 1px solid gray;
+  color: white;
+  background-color: #5600bb;
+  }
+
+select[type=text]{
+  color: white;
+  background-color: #5600bb;
+  display: inline;
+  vertical-align: middle;
+  text-align: center;
+  width: 9em;
+  border: 1px solid gray;
+  font-size: 2.8vmin;
+  font-family: Arial, verdana;
+}
