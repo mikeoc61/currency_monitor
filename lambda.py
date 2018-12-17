@@ -21,7 +21,7 @@ class currency_layer:
           base - base portion of URL
           mode - 'live' or 'list'
           key - Access Key provided when siging up for CurrencyLayer Account
-          basket - Tuple of comma separated currency abbreviations
+          basket - Comma separated currency abbreviations
         """
 
         if mode == 'list':
@@ -64,7 +64,7 @@ class currency_layer:
             rate_html = "<h2>As of " + ts + "</h2>"
 
             # Create Form to enable manipulation of Spread within a range
-            # This approach also provide input validation to user
+            # This approach also provides input validation
 
             rate_html += "<div id='inputs' class='myForm' text-align: center>"
             rate_html += "<form id='spread_form' action='#' "
@@ -83,19 +83,18 @@ class currency_layer:
                 in_for = 'USD/' + exch[3:]
                 usd_spread = (1/cur_rate)*(1+spread)
                 for_spread = cur_rate*(1/(1+spread))
-                _usd = "{}: {:>8.4f} ({:>8.4f})   {}: {:>7.4f} ({:>6.4f})".format(
+                _usd = "{}: {:>9.4f} ({:>9.4f})   {}: {:>7.4f} ({:>6.4f})".format(
                         in_usd, 1/cur_rate, usd_spread,
                         in_for, cur_rate, for_spread)
-                _for = "{}: {:>8.4f} ({:>8.4f})   {}: {:>7.4f} ({:>6.4f})".format(
+                _for = "{}: {:>9.4f} ({:>9.4f})   {}: {:>7.4f} ({:>6.4f})".format(
                         in_for, cur_rate, for_spread,
                         in_usd, 1/cur_rate, usd_spread)
 
-                if exch[3:] in ['EUR', 'GBP', 'AUD']:
+                if exch[3:] in ['EUR', 'GBP', 'AUD', 'BTC']:
                     rate_html += "<pre>" + _usd + "</pre>"
                 else:
                     rate_html += "<pre>" + _for + "</pre>"
 
-            rate_html += "<br>"
         else:
             rate_html = "<p>Expected string or dict in get_rates()<p>"
 
@@ -111,19 +110,50 @@ def get_list(basket):
 
     basket_list = basket.split(',')
 
+    unique = []                 # Used to eliminate redundant currencies
+
     for abbr in basket_list:
-        if abbr in curr_abbrs:
-            rate_html += "<p>{} = {}</p>".format(abbr, curr_abbrs[abbr])
-        else:
-            rate_html += "<p>{} = {}</p>".format(
+        if abbr not in unique:
+            unique.append(abbr)
+            if abbr in curr_abbrs:
+                rate_html += "<p>{} = {}</p>".format(abbr, curr_abbrs[abbr])
+            else:
+                rate_html += "<p>{} = {}</p>".format(
                           abbr.upper(), "Sorry, have no idea!")
 
-    rate_html += "<br>"
     return rate_html
+
+def build_select(basket):
+    '''Loop through basket of currency abbreviations and return with a list of
+       selections to be added to basket.
+    '''
+
+    basket_list = basket.split(',')
+
+    select_html = "<div id='cur_select' class='myForm'>"
+    select_html += "<form id='currency_form' action='#' "
+    select_html += "onsubmit=\"addCurrency('text');return false\">"
+
+    select_html += "<label for='select_label'>Add: </label>"
+    select_html += "<select id='currency_abbr' type='text' name='abbrSelect'>"
+    select_html += "<option disabled selected value> select currency </option>"
+
+    for abbr in curr_abbrs:
+        if abbr not in basket_list:
+            select_html += "<option value='{}'>{}</option>".format(
+                                           abbr, curr_abbrs[abbr])
+
+    select_html += "</select>"
+    select_html += "<input type='submit' class='button' onclick = '...'>"
+    select_html += "</form></div>"
+
+    select_html += "<br>"
+
+    return select_html
 
 
 def t_stamp(t):
-    """Timestamp utility function to format date and time from passed UNIX time"""
+    """Utility function to format date and time from passed UNIX time"""
     return(strftime('%y-%m-%d %H:%M %Z', localtime(t)))
 
 
@@ -135,7 +165,7 @@ def build_resp(event):
 
     # Define key variables defaults associated with CurrencyLayer web service
 
-    cl_key = '<-- Your CL Access Key Here -->'
+    cl_key = '<--Your CL Access Code Here -->'
     base = 'http://www.apilayer.net/api/'
     mode = 'list'                           # Use List mode (not implemented)
     basket = 'EUR,GBP,JPY,CHF,AUD,CAD'      # Default Currency basket
@@ -196,7 +226,11 @@ def build_resp(event):
     html_body +=    "<div style='display: inline;'>"
     html_body +=        rates
     html_body +=    "</div>"
-    html_body +=    "<br>"
+
+    # Add a new currency to basket
+    html_body +=    "<div style='display: inline;'>"
+    html_body +=        build_select(basket)
+    html_body +=    "</div>"
 
     # Output list of currency definitions
     html_body +=    "<div style='display: inline;'>"
@@ -208,11 +242,10 @@ def build_resp(event):
     html_body +=        "<button class='button' onclick='resetDefaults()'>"
     html_body +=        "Reset Currencies and Spread"
     html_body +=        "</button>"
-    html_body +=        "<br>"
     html_body +=    "</div>"
 
     html_body += "</div>"
-    html_body += "<br>"
+    html_body += "<br><br>"
     html_body += "</body>"
 
     # Note the following section should ideally be moved to a separate file on
@@ -223,7 +256,7 @@ def build_resp(event):
     html_js = "<script type='text/javascript'>"
     html_js += "'use strict';"
 
-    html_js += "var _spread = {:3.1f};".format(float(api_spread))
+    #html_js += "var _spread = {:3.1f};".format(float(api_spread))
     html_js += "var _base = getURIbase() + '{}';".format(api_params)
 
     html_js += "function getURIbase() {"
@@ -238,14 +271,20 @@ def build_resp(event):
     html_js +=    "}"
 
     html_js += "function changeSpread(action) {"
-    html_js +=    "var _val = document.getElementById('spread_input').value;"
-    html_js +=    "if (action == 'text') {"
-    html_js +=        "_spread = parseFloat(_val);"
-    html_js +=        "var _url = `${_base}\u0026spread=${_spread.toFixed(2)}`;"
-    html_js +=        "location.replace(`${_url}`);"
+    html_js +=    "var _spr = document.getElementById('spread_input').value;"
+    html_js +=    "var _url = _base + '\u0026spread=' + _spr;"
+    html_js +=    "location.replace(`${_url}`);"
+    html_js +=    "}"
+
+    html_js += "function addCurrency(action) {"
+    html_js +=    "var _spr = document.getElementById('spread_input').value;"
+    html_js +=    "var _abbr = document.getElementById('currency_abbr').value;"
+    html_js +=    "if (_abbr) {"
+    html_js +=      "var _url = _base + ',' + _abbr + '\u0026spread=' + _spr;"
+    html_js +=      "location.replace(`${_url}`);"
     html_js +=    "} else {"
-    html_js +=        "alert('Error: action = ' + action);"
-    html_js +=        "}"
+    html_js +=      "alert('Please select a currency');"
+    html_js +=      "}"
     html_js +=    "}"
 
     html_js += "</script>"
