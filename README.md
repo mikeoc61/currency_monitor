@@ -11,8 +11,10 @@ Monitors basket of foreign currencies for changes relative to USD and displays c
    descriptions. Used by lambda.py version to display a mapping of selected
    currencies.
 
+ - main.css contains CSS Stylesheet formatting and is loaded by lambda.py
+
 ## Dependencies:
 
-Command line version requires that CL_KEY environment variable be set prior to execution. The lambda version expects the key to be hard coded into the program code.
+Command line version requires that CL_KEY environment variable be set prior to execution. The lambda version expects the key to be hard coded into the program.
 
-To obtain a key and compare price options visit: https://currencylayer.com
+To obtain a key and review pricing options visit: https://currencylayer.com
