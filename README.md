@@ -11,7 +11,8 @@ Monitors basket of foreign currencies for changes relative to USD and displays c
    descriptions. Used by lambda.py version to display a mapping of selected
    currencies.
 
- - main.css contains CSS Stylesheet formatting and is loaded by lambda.py
+ - main.css contains CSS Stylesheet formatting which is copied to a publically
+   accessable AWS S3 bucket and linked to by lambda.py
 
 ## Dependencies:
 
