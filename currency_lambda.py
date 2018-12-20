@@ -143,12 +143,12 @@ class currency_layer:
 
                 change = (1 - (cur_rate / old_rate)) * 100
 
-                if round(change, 2) == 0:
-                    color = 'white'
-                elif round(change, 2) >= 0.1:
+                if round(change, 2) >= 0.25:
                     color = 'green'
-                elif round(change, 2) <= -0.1:
+                elif round(change, 2) <= -0.25:
                     color = 'red'
+                else:
+                    color = 'white'
 
                 rate_html += "<pre> {} <span style='color:{}'>{:>3.1f}%".\
                             format(msg, color, abs(change))

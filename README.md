@@ -10,7 +10,7 @@ Monitors basket of foreign currencies for changes relative to USD and displays c
 - currency_lambda.py is an updated version which uses and AWS RDS hosted MySQL
   database to hold previous currency exchange rate quotes which are compared
   with current quotes to determine if the dollar has strengthened or weakened
-  relative to the last update
+  relative to the last update.
 
 - currency_config.py contains various configuration variable definitions along   
   with currency abbreviations and associated descriptions. Used with the lambda
