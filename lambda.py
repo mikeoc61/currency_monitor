@@ -1,7 +1,7 @@
 from json import loads
 from urllib.request import urlopen
 from time import time, strftime, localtime
-from currencies import curr_abbrs
+from currency_config import curr_abbrs
 import logging
 
 '''Currency Exchange Rate program written as a AWS lambda routine.
