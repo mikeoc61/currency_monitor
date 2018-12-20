@@ -23,7 +23,7 @@ Monitors basket of foreign currencies for changes relative to USD and displays c
 
 Command line version requires that CL_KEY environment variable be set prior to
 execution. The lambda version expects the key and other variable to be defined
-in currency_config.py.
+in currency_config.py
 
 To obtain a key and review pricing options visit: https://currencylayer.com
 
