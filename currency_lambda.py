@@ -88,11 +88,6 @@ class currency_layer:
             ts = t_stamp(rates['timestamp'])
             rate_html = "<h2>As of " + ts + "</h2>"
 
-            # Establish a connection to Persistent Database
-            # Assume database has been created and tables initialized
-
-            db_conn = db_connect()
-
             # Create Form to enable manipulation of Spread within a range
             # This approach also provides input validation
 
@@ -109,6 +104,28 @@ class currency_layer:
             spread = spread / 100               # convert to percentage
             rate_html += "<br>"
 
+            # Establish a connection to Persistent AWS RDS MySQL Database
+            # Assume database has been created and tables initialized
+            #
+            # Database will look like this:
+            #
+            # ExchangeDB SQL > SELECT * FROM ExRates;
+            #
+            #   +------+----------+
+            #   | Abbr | Rate     |
+            #   +------+----------+
+            #   | AED  |  3.67305 |
+            #   | AFN  |  74.9502 |
+            #   | ALL  |   107.62 |
+            #   | AMD  |   484.53 |
+            #   | ANG  |  1.77575 |
+            #   | AOA  |        0 |
+            #   | ARS  |        0 |
+            #   | AUD  |   1.4053 |
+            #   ...
+
+            db_conn = db_connect()
+
             # Itterate over current rates and display results in HTML
 
             for exch, cur_rate in rates['quotes'].items():
@@ -120,7 +137,7 @@ class currency_layer:
                 old_rate = old[1] if old[1] != 0 else cur_rate
 
                 logger.info('For {}: Old = {} New = {}'.format(
-                                old[0], old[1], cur_rate))
+                                exch, old[1], cur_rate))
 
                 in_usd = exch[-3:] + '/USD'
                 in_for = 'USD/' + exch[3:]
