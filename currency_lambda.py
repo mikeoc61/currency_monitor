@@ -2,8 +2,10 @@ from json import loads
 from urllib.request import urlopen
 from time import time, strftime, localtime
 from signal import signal, SIGINT
+from decimal import Decimal, getcontext
 import pymysql
 import logging
+import boto3
 
 '''Currency Exchange Rate program intended to be deployed as AWS Lambda function
    Builds a web page based on user specific URI and Currency Exchange rates.
@@ -13,7 +15,7 @@ import logging
    Program utilizes four external data sources:
 
    1) Currency Layer Exchange Rate service for latest exchange rates
-   2) AWS RDS MySQL database to store most recent rates for change determination
+   2) AWS RDS MySQL or DynamoDB database to store old rates for change determination
    3) AWS API Gateway to provide a formatted query and response to a browser
    4) AWS S3 to hold CSS stylesheet
 
@@ -21,12 +23,12 @@ import logging
 
    1) Python 3 programming language for logic and to generate HTML
    2) HTML, CSS and Javascript to format the resulting web page
-   3) Mypysql Python module and AWS RDS to save quote data
+   3) Mypysql Python module and AWS RDS or DynamoDB to save quote data
    4) AWS Lambda and API Gateway to instantiate the function
 
    Author: Michael O'Connor
 
-   Last update: 12/20/18
+   Last update: 12/23/18
 '''
 
 logger = logging.getLogger()
@@ -51,6 +53,11 @@ class currency_layer:
             self.cl_url = base + 'live?' + 'access_key=' \
                           + key + '&currencies=' + basket
 
+        # Working with Decimal numbers so set precision to prevent strange
+        # floating point approximations
+
+        getcontext().prec = 6
+
 
     def cl_validate(self, url):
         """Open supplied URL. If initial open is successful, read contents
@@ -73,20 +80,25 @@ class currency_layer:
 
 
     def get_rates(self, spread):
-        '''Loop through exchange rate raw data and returned formatted HTML'''
-        '''Spread is used to provide a percentage delta corresponding to'''
-        '''costs associated with buying & selling foreign currencies'''
+        '''Loop through exchange rate raw data and returned formatted HTML
+           Spread is used to provide a percentage delta corresponding to
+           costs associated with buying & selling foreign currencies
 
-        from currency_config import usd_first, db_table
+           Note this routine can use either AWS RDS MySQL or AWS DynamoDB
+        '''
+
+        from currency_config import usd_first, db_table, dynamo_db_table
 
         rates = self.cl_validate(self.cl_url)
-        spread = float(spread)
+        spread = Decimal(spread)
 
         if isinstance(rates, str):                  # cl_validate returned Error
             rate_html = "<p>" + rates + "</p>"
         elif isinstance(rates, dict):               # cl_validate returned data
             ts = t_stamp(rates['timestamp'])
             rate_html = "<h2>As of " + ts + "</h2>"
+
+            logger.info("Currency Layer Last update: " + ts)
 
             # Create Form to enable manipulation of Spread within a range
             # This approach also provides input validation
@@ -104,12 +116,10 @@ class currency_layer:
             spread = spread / 100               # convert to percentage
             rate_html += "<br>"
 
-            # Establish a connection to Persistent AWS RDS MySQL Database
+            # Establish a connection to Persistent AWS Database
             # Assume database has been created and tables initialized
             #
             # Database will look like this:
-            #
-            # ExchangeDB SQL > SELECT * FROM ExRates;
             #
             #   +------+----------+
             #   | Abbr | Rate     |
@@ -119,33 +129,45 @@ class currency_layer:
             #   | ALL  |   107.62 |
             #   | AMD  |   484.53 |
             #   | ANG  |  1.77575 |
-            #   | AOA  |        0 |
-            #   | ARS  |        0 |
-            #   | AUD  |   1.4053 |
             #   ...
 
-            db_conn = db_connect()
+            table = db_connect('DynamoDB')
 
-            # Itterate over current rates and display results in HTML
+            #db_conn = db_connect('sql')
+
+            # Itterate over each current rate and display results in HTML
+            # along with percentage spread and change percentage
 
             for exch, cur_rate in rates['quotes'].items():
 
-                old = db_query(db_conn, db_table, exch[-3:])
+                # Note DynamoDB nominally returns an object of type Decimal
 
-                # If currency recently added then rate will be zero
+                old = dynamo_query(table, exch[-3:])
 
-                old_rate = old[1] if old[1] != 0 else cur_rate
+                #old = sql_query(db_conn, db_table, exch[-3:])
 
-                logger.info('For {}: Old = {} New = {}'.format(
-                                exch, old[1], cur_rate))
+                # If currency recently added to basket then old rate will still
+                # be '0.0' string instead of a Decimal value. If so, set old to
+                # new value to prevent devide by zero exception and convert to
+                # Decimal type to maintain precision.
+
+                old_rate = Decimal(cur_rate) if (old[1] == '0.0') else Decimal(old[1])
+
+                # Convert current rate float to fixed point decimal value by
+                # first converting to string. This is required to maintain
+                # desired precision.
+
+                cur_rate = Decimal(str(cur_rate))
+
+                logger.info('For {}: Old= {} New= {}'.format(exch, old[1], cur_rate))
 
                 in_usd = exch[-3:] + '/USD'
                 in_for = 'USD/' + exch[3:]
                 usd_spread = (1/cur_rate)*(1+spread)
                 for_spread = cur_rate*(1/(1+spread))
 
-                # Depending on display preference format certain currencies
-                # with per Dollar version first otherwise Foreign first.
+                # Depending on display preference, format certain currencies
+                # with per USD version first, otherwise Foreign first.
 
                 if exch[3:] in usd_first:
                     msg = "{}: {:>9.4f} ({:>9.4f})  {}: {:>7.4f} ({:>6.4f})".\
@@ -160,27 +182,32 @@ class currency_layer:
 
                 change = (1 - (cur_rate / old_rate)) * 100
 
-                if round(change, 2) >= 0.25:
+                #logger.info('Change percentage = {}'.format(change))
+
+                if change >= 0.25:
                     color = 'green'
-                elif round(change, 2) <= -0.25:
+                elif change <= -0.25:
                     color = 'red'
                 else:
                     color = 'white'
 
                 rate_html += "<pre> {} <span style='color:{}'>{:>3.1f}%".\
-                            format(msg, color, abs(change))
+                              format(msg, color, abs(change))
                 rate_html += "</span></pre>"
 
             # Done with loop so bulk update database table with latest rates
 
-            db_update(db_conn, db_table, rates)
+            dynamo_update(table, rates['quotes'])
+
+            #sql_update(db_conn, db_table, rates['quotes'])
 
         else:
             rate_html = "<p>Error: Expected string or dict in get_rates()<p>"
             logger.error("In get_rates(): Expected string or dict")
 
-        # Close previously opened DB connection
-        db_conn.close()
+        # Close previously opened DB connection if using AWS MySQL Database
+
+        #db_conn.close()
 
         return rate_html
 
@@ -196,7 +223,7 @@ def get_list(basket):
 
     basket_list = basket.split(',')
 
-    unique = []             # Used to eliminate redundant currencies
+    unique = []                             # Eliminate redundant currencies
 
     for abbr in basket_list:
         if abbr not in unique:
@@ -207,6 +234,7 @@ def get_list(basket):
                 rate_html += "<p>{} = {}</p>".format(abbr, "Unknown")
 
     return rate_html
+
 
 def build_select(basket):
     '''Loop through basket of currency abbreviations and return with a list of
@@ -252,7 +280,7 @@ def build_resp(event):
 
     from currency_config import cl_key, base, mode, basket, api_spread
 
-    # If options passed as URL parameters replace default values accordingly
+    # If options passed as URL parameters, replace default values accordingly
 
     try:
         options = event['params']['querystring']
@@ -265,10 +293,9 @@ def build_resp(event):
                      basket = val
             if key.lower() == "spread":
                 if val:
-                    api_spread = val
+                    api_spread = Decimal(val)
 
-    logger.info('Basket: {}'.format(basket))
-    logger.info('Spread: {}'.format(api_spread))
+    logger.info('Basket: {} Spread: {}'.format(basket, api_spread))
 
     # Instantiate currency_layer() object and initialize valiables
 
@@ -278,8 +305,6 @@ def build_resp(event):
         rates = "<p>Error: unable to instantiate currency_layer()"
     else:
         rates = c.get_rates(api_spread)
-
-    #logger.info('Rates: {}'.format(rates))
 
     # Variables used by Javascript routines to refresh page content
 
@@ -292,9 +317,11 @@ def build_resp(event):
     html_head += "<meta name='viewport' content='width=device-width'>"
 
     # Stop annoying favicon.ico download attempts / failure
+
     html_head += "<link rel='icon' href='data:,'>"
 
     # Import CSS style config from publically readable S3 bucket
+
     html_head += "<link rel='stylesheet' type='text/css' media='screen'"
     html_head += "href='https://s3.amazonaws.com/mikeoc.me/CSS/Currency/main.css'>"
     html_head += "</head>"
@@ -303,22 +330,26 @@ def build_resp(event):
     html_body += "<h1>Currency Exchange Rates</h1>"
 
     # Output list of currency exchange rates
+
     html_body += "<div class='center'>"
     html_body +=    "<div>"
     html_body +=        rates
     html_body +=    "</div>"
 
     # Add a new currency to basket
+
     html_body +=    "<div>"
     html_body +=        build_select(basket)
     html_body +=    "</div>"
 
     # Output list of currency definitions
+
     html_body +=    "<div>"
     html_body +=        get_list(basket)
     html_body +=    "</div>"
 
     # Provide button to reset currency basket and spread to default
+
     html_body +=    "<div>"
     html_body +=        "<button class='button' onclick='resetDefaults()'>"
     html_body +=        "Reset Currencies and Spread"
@@ -337,7 +368,6 @@ def build_resp(event):
     html_js = "<script type='text/javascript'>"
     html_js += "'use strict';"
 
-    #html_js += "var _spread = {:3.1f};".format(float(api_spread))
     html_js += "var _base = getURIbase() + '{}';".format(api_params)
 
     html_js += "function getURIbase() {"
@@ -376,34 +406,43 @@ def build_resp(event):
     return resp
 
 
-def db_connect():
-    '''Open a connection to AWS RDS MySQL Database'''
+def db_connect(database='sql'):
+    '''Open a connection to AWS RDS MySQL DB or confirm DynamoDB access'''
 
     from currency_config import db_host, db_port, db_user, db_pass, db_name
+    from currency_config import dynamo_db_table
 
-    try:
-        conn = pymysql.connect(host=db_host, port=db_port, user=db_user, \
-                        passwd=db_pass, db=db_name, connect_timeout=5)
-    except:
-        logger.error("ERROR: Unexpected: Could not connect to MySql instance.")
-    else:
-        logger.info("SUCCESS: Connection to RDS mysql instance succeeded")
-        return conn
+    if database == 'sql':           # Connect to DynamoDB
+        try:
+            conn = pymysql.connect(host=db_host, port=db_port, user=db_user, \
+                            passwd=db_pass, db=db_name, connect_timeout=5)
+        except:
+            logger.error("ERROR: Could not connect to MySql instance.")
+        else:
+            logger.info("SUCCESS: Connection to RDS mysql instance succeeded")
+            return conn
+
+    elif database == 'DynamoDB':    # Connect to DynamoDB
+        try:
+            db = boto3.resource('dynamodb')
+            table = db.Table(dynamo_db_table)
+        except:
+            logger.error("ERROR: Could not connect to DynamoDB.")
+        else:
+            logger.info("SUCCESS: DynamoDB Table {} created: {}".\
+                            format(dynamo_db_table, table.creation_date_time))
+            return table
 
 
-def db_update(conn, table, rates):
-    '''For rate data structure, itterate through currency exchange quotes
-       and update with latest values
-    '''
-
-    #logger.info("In db_update()")
+def sql_update(conn, table, rates):
+    '''Itterate through currency exchange rates and update RDS MySQL table'''
 
     with conn.cursor() as cur:
-        for exch, cur_rate in rates['quotes'].items():
+        for exch, cur_rate in rates.items():
             query = "UPDATE {} SET Rate = '{}' WHERE Abbr = '{}'".\
                      format(table, cur_rate, exch[-3:])
             cur.execute(query)
-            #logger.info(query)
+            logger.info(query)
 
         conn.commit()
 
@@ -411,7 +450,22 @@ def db_update(conn, table, rates):
     cur.close()
 
 
-def db_query(conn, table, abbr):
+def dynamo_update(table, data):
+    '''Update DynamoDB values with provided Abbr:Rate (key:value) pair
+       Convert rates to type Decimal before updating by first converting
+       rate value to type str.
+    '''
+
+    for abbr, rate in data.items():
+        response = table.update_item(
+            Key={'Abbr': abbr[-3:]},
+            UpdateExpression="set Rate = :r",
+            ExpressionAttributeValues={':r': Decimal(str(rate))},
+            ReturnValues="UPDATED_NEW"
+            )
+
+
+def sql_query(conn, table, abbr):
     '''For a given table value, query database and return result'''
 
     with conn.cursor() as cur:
@@ -422,7 +476,22 @@ def db_query(conn, table, abbr):
 
     cur.close()             # Clean everything up
 
-    return row              # Return execute results
+    return row
+
+
+def dynamo_query(table, abbr):
+    '''For a given table value, query database and return result'''
+
+    response = table.get_item(
+        Key={
+            'Abbr': str(abbr)
+            }
+        )
+
+    item = response['Item']
+    rate = (abbr, item['Rate'])     # Build response to match SQL format
+
+    return rate
 
 
 def lambda_handler(event, context):
@@ -430,7 +499,7 @@ def lambda_handler(event, context):
 
     print("In lambda handler")
 
-    #logger.info('Event: {}'.format(event))
+    logger.info('Event: {}'.format(event))
 
     return(build_resp(event))
 
@@ -441,7 +510,6 @@ def signal_handler(signal, frame):
     raise SystemExit()
 
 
-# when invoked locally vs. via AWS lambda
 def main():
     '''Main() used to simulate lambda event handler. Constructs event dict,
        calls build_resp and prints HTML/CSS/Javascript to console which can
