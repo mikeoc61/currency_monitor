@@ -15,6 +15,10 @@ db_table = "ExRates"
 db_host = "< Amazon RDS public URI >"
 db_port = 3306
 
+# AWS DynamoDB key variables
+
+dynamo_db_table = 'ExchangeRates'
+
 # List of currencies to be displayed with <CUR>/USD in left most column
 # Others will be listed with USD/<CUR> on the left and <CUR>/USD on the right
 
