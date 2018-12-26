@@ -15,6 +15,10 @@ Monitors basket of foreign currencies for changes relative to USD and displays c
   database update, the database quote and timestamps are updated with most
   current info from Currency Layer service.
 
+- init_dynamo_table.py is used to initialize the DynamoDB table with Abbreviations,
+  Current Rates and Timestamp for each supported Currency. Run this once after
+  table is created typically using the AWS console or AWS CLI.
+
 - currency_config.py contains various configuration variable definitions along   
   with currency abbreviations and associated descriptions. Used with the lambda
   versions.
