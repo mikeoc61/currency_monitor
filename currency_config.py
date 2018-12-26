@@ -15,6 +15,10 @@ db_table = "ExRates"
 db_host = "< Amazon RDS public URI >"
 db_port = 3306
 
+# Defines location of CSS Stylesheet
+
+main_css_href = 'https://s3.amazonaws.com/mikeoc.me/CSS/Currency/main.css'
+
 # AWS DynamoDB key variables
 
 dynamo_db_table = 'ExchangeRates'
