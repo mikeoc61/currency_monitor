@@ -1,7 +1,6 @@
 from json import loads
 from urllib.request import urlopen
 from time import strftime, localtime
-from signal import signal, SIGINT
 from decimal import Decimal, getcontext
 import logging
 import boto3
@@ -33,7 +32,7 @@ import boto3
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-class currency_layer:
+class CurrencyLayer:
 
     def __init__(self, base, mode, key, basket):
 
@@ -54,6 +53,7 @@ class currency_layer:
                           + key + '&currencies=' + basket
 
         self.basket = basket
+        self.rate_dict = {}
 
         # Working with Decimal numbers so set precision to prevent strange
         # floating point approximations
@@ -91,7 +91,7 @@ class currency_layer:
            costs associated with buying & selling foreign currencies
         '''
 
-        from currency_config import usd_first, dynamo_db_table
+        from currency_config import USD_FIRST, DYNAMO_DB_TABLE
 
         spread = Decimal(spread)
 
@@ -131,7 +131,7 @@ class currency_layer:
         #   | ANG  |  1.77575 | 1545828846 |
         #   ...
 
-        table = db_connect(dynamo_db_table)
+        table = db_connect(DYNAMO_DB_TABLE)
 
         # Itterate over each current rate and display results in HTML
         # along with percentage spread and change percentage. Use
@@ -167,7 +167,7 @@ class currency_layer:
             # Display certain currencies in per USD first as determined
             # by currency abbreviation inclusion in usd_first data set
 
-            if exch[3:] in usd_first:
+            if exch[3:] in USD_FIRST:
                 msg = "{}: {:>9.4f} ({:>9.4f})  {}: {:>7.4f} ({:>6.4f})".\
                         format(in_usd, 1/cur_rate, usd_spread,
                                in_for, cur_rate, for_spread)
@@ -217,13 +217,11 @@ class currency_layer:
         return rate_html
 
 
-    def get_list(self):
+    def get_list(self, cl_abbrs):
         '''Loop through basket of currency abbreviations and return with HTML
            list of corresponding definitions. If specific exchange abbreviation
            is specified multiple times, don't repeat in list.
         '''
-
-        from currency_config import curr_abbrs  # Import abbreviations
 
         rate_html = "<h2>Abbreviations</h2>"
 
@@ -234,20 +232,18 @@ class currency_layer:
         for abbr in basket_list:
             if abbr not in unique:
                 unique.append(abbr)
-                if abbr in curr_abbrs:
-                    rate_html += "<p>{} = {}</p>".format(abbr, curr_abbrs[abbr])
+                if abbr in cl_abbrs:
+                    rate_html += "<p>{} = {}</p>".format(abbr, cl_abbrs[abbr])
                 else:
                     rate_html += "<p>{} = {}</p>".format(abbr, "Unknown")
 
         return rate_html
 
 
-    def build_select(self):
+    def build_select(self, cl_abbrs):
         '''Loop through basket of currency abbreviations and return with an HTML
            form a list of currency options to be added to basket.
         '''
-
-        from currency_config import curr_abbrs
 
         basket_list = self.basket.split(',')
 
@@ -258,10 +254,10 @@ class currency_layer:
         select_html += "<select id='currency_abbr' type='text' name='abbrSelect'>"
         select_html += "<option disabled selected value>  Add Currency </option>"
 
-        for abbr in curr_abbrs:
+        for abbr in cl_abbrs:
             if abbr not in basket_list:
                 select_html += "<option value='{}'>{}</option>".\
-                                format(abbr, curr_abbrs[abbr])
+                                format(abbr, cl_abbrs[abbr])
 
         select_html += "</select>"
         select_html += "<input type='submit' class='button' onclick = '...'>"
@@ -336,9 +332,8 @@ def build_resp(event):
     '''
     # Import variable definitions associated with CurrencyLayer service
 
-    from currency_config import cl_key, base, mode, basket, api_spread
-
-    from currency_config import main_css_href
+    from currency_config import CL_KEY, BASE, MODE, basket, api_spread
+    from currency_config import MAIN_CSS_HREF, CURR_ABBRS
 
     # If options passed as URL parameters, replace default values accordingly
 
@@ -361,13 +356,13 @@ def build_resp(event):
     # Layer Web Service
 
     try:
-        c = currency_layer(base, mode, cl_key, basket)
-        c.cl_validate()
+        cl_feed = CurrencyLayer(BASE, MODE, CL_KEY, basket)
+        cl_feed.cl_validate()
     except:
         rates = "<h2>Error: unable to instantiate currency_layer()</h2>"
         rates += "<h3>Please see Lambda CloudWatch Logs</h3>"
     else:
-        rates = c.get_rates(api_spread)
+        rates = cl_feed.get_rates(api_spread)
 
     html_head = "<!DOCTYPE html>"
     html_head += "<head>"
@@ -382,7 +377,7 @@ def build_resp(event):
     # Import CSS style config from location defined in config file
 
     html_head += "<link rel='stylesheet' type='text/css' media='screen'"
-    html_head += "href={}>".format(main_css_href)
+    html_head += "href={}>".format(MAIN_CSS_HREF)
     html_head += "</head>"
 
     html_body = "<body>"
@@ -398,13 +393,13 @@ def build_resp(event):
     # Add a new currency to basket
 
     html_body +=    "<div>"
-    html_body +=        c.build_select()
+    html_body +=        cl_feed.build_select(CURR_ABBRS)
     html_body +=    "</div>"
 
     # Output list of currency definitions
 
     html_body +=    "<div>"
-    html_body +=        c.get_list()
+    html_body +=        cl_feed.get_list(CURR_ABBRS)
     html_body +=    "</div>"
 
     # Provide button to reset currency basket and spread to default
@@ -469,39 +464,6 @@ def lambda_handler(event, context):
     print("In lambda handler")
 
     logger.info('Event: {}'.format(event))
+    logger.info('Context: {}'.format(context))
 
     return build_resp(event)
-
-
-# Signal handler for CTRL-C manual termination
-def signal_handler(signal, frame):
-    print(cur_col['endc'] + '\nProgram terminated manually', '', '\n')
-    raise SystemExit()
-
-
-def main():
-    '''Main() used to simulate lambda event handler. Constructs event dict,
-       calls build_resp and prints HTML/CSS/Javascript to console which can
-       then be sent to a file and opened by a web browser.
-    '''
-
-    event = {
-        'params': {
-            'querystring': {
-                'currencies': '',
-                'spread': '1.00'
-                }
-            }
-        }
-    #event = {'params': {}}
-
-    print(build_resp(event))
-
-
-if __name__ == '__main__':
-    """When invoked from shell, call signal() to handle CRTL-C from user
-       and invoke main() function
-    """
-    signal(SIGINT, signal_handler)
-
-    main()

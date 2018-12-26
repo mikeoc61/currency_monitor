@@ -1,8 +1,8 @@
 # Define key variables defaults associated with CurrencyLayer web service
 
-cl_key = '< your currency layer access key >'
-base = 'http://www.apilayer.net/api/'       # URI base for CL
-mode = 'live'                               # Use live mode (vs. list)
+CL_KEY = '< your currency layer access key >'
+BASE = 'http://www.apilayer.net/api/'       # URI base for CL
+MODE = 'live'                               # Use live mode (vs. list)
 basket = 'EUR,GBP,JPY,CHF,AUD,CAD'          # Default Currency basket
 api_spread = 1.0                            # Default spread = 1.0%
 
@@ -17,20 +17,20 @@ db_port = 3306
 
 # Defines location of CSS Stylesheet
 
-main_css_href = 'https://s3.amazonaws.com/mikeoc.me/CSS/Currency/main.css'
+MAIN_CSS_REF = 'https://s3.amazonaws.com/mikeoc.me/CSS/Currency/main.css'
 
 # AWS DynamoDB key variables
 
-dynamo_db_table = 'ExchangeRates'
+DYNAMO_DB_TABLE = 'ExchangeRates'
 
 # List of currencies to be displayed with <CUR>/USD in left most column
 # Others will be listed with USD/<CUR> on the left and <CUR>/USD on the right
 
-usd_first = ['EUR','GBP','AUD','BTC','XAU','XAG']
+USD_FIRST = ['EUR','GBP','AUD','BTC','XAU','XAG']
 
 # List of currencies supported by Currency Layer Web Service
 
-curr_abbrs = {
+CURR_ABBRS = {
     "AED":"United Arab Emirates Dirham",
     "AFN":"Afghan Afghani",
     "ALL":"Albanian Lek",
