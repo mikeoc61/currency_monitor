@@ -1,6 +1,6 @@
 # currency_monitor
 
-Monitors basket of foreign currencies for changes relative to USD and displays changes on console. There are 2 implementations of the program:
+Monitors basket of foreign currencies for changes relative to USD and displays changes on console. There are several implementations of the program:
 
 - exchange.py is a command line version which displays updates once per hour
    to the console (terminal).
