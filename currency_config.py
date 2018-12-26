@@ -17,7 +17,7 @@ db_port = 3306
 
 # Defines location of CSS Stylesheet
 
-MAIN_CSS_REF = 'https://s3.amazonaws.com/mikeoc.me/CSS/Currency/main.css'
+MAIN_CSS_HREF = 'https://s3.amazonaws.com/mikeoc.me/CSS/Currency/main.css'
 
 # AWS DynamoDB key variables
 
