@@ -1,28 +1,27 @@
 from json import loads
 from urllib.request import urlopen
 from time import time, strftime, localtime
-from currency_config import curr_abbrs
 import logging
+from currency_config import CURR_ABBRS
 
 '''Currency Exchange Rate program written as a AWS lambda routine.
-
    Makes one request when invoked and returns HTML to calling browser.
 '''
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-class currency_layer:
+class CurrencyLayer:
 
     def __init__(self, base, mode, key, basket):
-        """Build URL we will use to get latest exchange rates
+        '''Build URL we will use to get latest exchange rates
 
-        Args:
-          base - base portion of URL
-          mode - 'live' or 'list'
-          key - Access Key provided when siging up for CurrencyLayer Account
-          basket - Comma separated currency abbreviations
-        """
+        Arguments:
+          base {str}- base portion of URL
+          mode {str}- 'live' or 'list'
+          key {str} - Access Key provided when siging up for CurrencyLayer Account
+          basket {str} - Comma separated currency abbreviations
+        '''
 
         if mode == 'list':
             self.cl_url = base + 'list?' + 'access_key=' + key
@@ -115,8 +114,8 @@ def get_list(basket):
     for abbr in basket_list:
         if abbr not in unique:
             unique.append(abbr)
-            if abbr in curr_abbrs:
-                rate_html += "<p>{} = {}</p>".format(abbr, curr_abbrs[abbr])
+            if abbr in CURR_ABBRS:
+                rate_html += "<p>{} = {}</p>".format(abbr, CURR_ABBRS[abbr])
             else:
                 rate_html += "<p>{} = {}</p>".format(
                           abbr.upper(), "Sorry, have no idea!")
@@ -138,10 +137,10 @@ def build_select(basket):
     select_html += "<select id='currency_abbr' type='text' name='abbrSelect'>"
     select_html += "<option disabled selected value>  Add Currency </option>"
 
-    for abbr in curr_abbrs:
+    for abbr in CURR_ABBRS:
         if abbr not in basket_list:
             select_html += "<option value='{}'>{}</option>".format(
-                                           abbr, curr_abbrs[abbr])
+                                           abbr, CURR_ABBRS[abbr])
 
     select_html += "</select>"
     select_html += "<input type='submit' class='button' onclick = '...'>"
@@ -165,11 +164,8 @@ def build_resp(event):
 
     # Define key variables defaults associated with CurrencyLayer web service
 
-    cl_key = '<-- Currency Layer Access Key -->'
-    base = 'http://www.apilayer.net/api/'
-    mode = 'list'                           # Use List mode (not implemented)
-    basket = 'EUR,GBP,JPY,CHF,AUD,CAD'      # Default Currency basket
-    api_spread = 1.0                        # Default spread = 1.0%
+    from currency_config import CL_KEY, BASE, MODE, basket, api_spread
+    from currency_config import MAIN_CSS_HREF
 
     # If options passed as URL parameters replace default values accordingly
 
@@ -192,7 +188,7 @@ def build_resp(event):
     # Instantiate currency_layer() object and initialize valiables
 
     try:
-        c = currency_layer(base, 'live', cl_key, basket)
+        c = CurrencyLayer(BASE, MODE, CL_KEY, basket)
     except:
         rates = "<p>Error: unable to instantiate currency_layer()"
     else:
@@ -215,7 +211,7 @@ def build_resp(event):
 
     # Import CSS style config from publically readable S3 bucket
     html_head += "<link rel='stylesheet' type='text/css' media='screen'"
-    html_head += "href='https://s3.amazonaws.com/mikeoc.me/CSS/Currency/main.css'>"
+    html_head += "href={}>".format(MAIN_CSS_HREF)
     html_head += "</head>"
 
     html_body = "<body>"
@@ -300,4 +296,4 @@ def lambda_handler(event, context):
 
     logger.info('Event: {}'.format(event))
 
-    return(build_resp(event))
+    return build_resp(event)
