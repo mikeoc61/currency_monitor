@@ -17,7 +17,7 @@ DYNAMO_DB_TABLE = 'ExchangeRates'
 # List of currencies to be displayed with <CUR>/USD in left most column
 # Others will be listed with USD/<CUR> on the left and <CUR>/USD on the right
 
-USD_FIRST = ['EUR','GBP','AUD','BTC','XAU','XAG']
+USD_FIRST = ['EUR', 'GBP', 'AUD', 'BTC', 'XAU', 'XAG']
 
 # List of currencies supported by Currency Layer Web Service
 
