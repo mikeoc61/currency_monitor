@@ -6,15 +6,6 @@ MODE = 'live'                               # Use live mode (vs. list)
 basket = 'EUR,GBP,JPY,CHF,AUD,CAD'          # Default Currency basket
 api_spread = 1.0                            # Default spread = 1.0%
 
-#MySQL DB credentials and specifics for rds mysql instance
-
-db_user = "<mysql database user id>"
-db_pass = "<mysql database user password>"
-db_name = "ExchangeDB"
-db_table = "ExRates"
-db_host = "< Amazon RDS public URI >"
-db_port = 3306
-
 # Defines location of CSS Stylesheet
 
 MAIN_CSS_HREF = 'https://s3.amazonaws.com/mikeoc.me/CSS/Currency/main.css'

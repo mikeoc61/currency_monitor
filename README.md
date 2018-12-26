@@ -30,7 +30,7 @@ in currency_config.py
 
 To obtain a key and review pricing options visit: https://currencylayer.com
 
-The currency_lambda.py version expects to have an AWS RDS MySQL database defined
+The currency_lambda.py version expects to have an AWS DynamoDB database defined
 which it uses to store the most recent currency exchange rates.
 
 ## Technologies Used
