@@ -179,7 +179,7 @@ class CurrencyLayer:
             # Calculate percentage change and use to determine display color.
             # If currency was recently added to basket then old rate may
             # still be '0.0' in the database. If so, set old rate equal to
-            # current rate to prevent devide by zero exception and
+            # current rate to prevent divide by zero exception and
             # convert to Decimal type to maintain precision.
 
             old_rate = Decimal(cur_rate) if (old == '0.0') else Decimal(old)
