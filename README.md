@@ -1,4 +1,5 @@
 # currency_monitor
+
 Monitors basket of foreign currencies for changes relative to USD and displays changes on console. There are 2 implementations of the program:
 
 - exchange.py is a command line version which displays updates once per hour
@@ -7,10 +8,12 @@ Monitors basket of foreign currencies for changes relative to USD and displays c
 - lambda.py is a simplified version for AWS lambda that runs once and returns
   results as a formatted Web page. Program uses HTML, CSS and Javascript.
 
-- currency_lambda.py is an updated version which uses and AWS RDS hosted MySQL
-  database to hold previous currency exchange rate quotes which are compared
+- currency_lambda.py is an updated Lambda version which uses AWS DynamoDB service
+  to hold previous currency exchange rate quotes and timestamps which are compared
   with current quotes to determine if the dollar has strengthened or weakened
-  relative to the last update.
+  relative to the last update. If more than 24 hours have elapsed since last
+  database update, the database quote and timestamps are updated with most
+  current info from Currency Layer service.
 
 - currency_config.py contains various configuration variable definitions along   
   with currency abbreviations and associated descriptions. Used with the lambda
@@ -32,7 +35,7 @@ which it uses to store the most recent currency exchange rates.
 
 ## Technologies Used
 
-- AWS Lambda, RDS, S3 and API Gateway
-- Python 3 with Mypysql module
+- AWS Lambda, DynamoDB, S3 and API Gateway
+- Python 3 with Boto3 module
 - HTML, CSS and Javascript
 - Currency Layer Currency Exchange Quote service
