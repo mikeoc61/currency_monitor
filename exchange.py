@@ -21,7 +21,7 @@ from time import sleep, time, strftime, localtime
     Copyright (c) 2018 Michael E. O'Connor
 """
 
-__version__ = "1.2"
+__version__ = "1.3"
 
 # Ascii sequences used to control console terminal display colors
 cur_col = {
@@ -33,7 +33,7 @@ cur_col = {
     }
 
 
-class currency_layer:
+class CurrencyLayer:
     def __init__(self, key, basket):
         """Build URL we will use to get latest exchange rates
 
@@ -152,9 +152,8 @@ class currency_layer:
 
 
 def t_stamp(t):
-    """Timestamp utility formats date and time from provided UNIX style
-    time value.
-    """
+    """Timestamp utility formats date and time using UNIX styletime value."""
+
     return(strftime('%y-%m-%d %H:%M %Z', localtime(t)))
 
 
@@ -180,7 +179,7 @@ def main():
     """
     Read API key from from os.environ(), exit if not set. Define basket of
     currencies we wish to monitor. Set monitoring interval, instantiate
-    currency_layer() object and invoke monitoring() method with desired
+    CurrencyLayer() object and invoke monitoring() method with desired
     interval.
     """
 
@@ -195,7 +194,7 @@ def main():
 
     interval = 60        # In minutes
 
-    c = currency_layer(key, basket)
+    c = CurrencyLayer(key, basket)
     c.monitor(interval)
 
 
