@@ -187,9 +187,10 @@ class CurrencyLayer:
 
             change_pct = (1 - (cur_rate / old_rate)) * 100
 
-            # Rates are quoted relative to USD. If change percentage is
-            # positive then USD has weakened relative to foreign currency.
-            # If percentage change is less than 0.1% then don't color
+            # Rates are quoted relative to USD. If change color is red
+            # then USD has weakened relative to foreign currency. If green then
+            # USD has strengthened. If change is less than 0.1%, don't color.
+            # Also, add hover to text showing time basis for percentage change.
 
             if change_pct >= 0.1:
                 color = 'red'
@@ -198,8 +199,9 @@ class CurrencyLayer:
             else:
                 color = 'white'
 
-            rate_html += "<pre> {} <span style='color:{}'>{:>3.2f}%".\
-                          format(msg, color, abs(change_pct))
+            rate_html += "<pre>{} <span title='USD % Change since: {}'\
+                          style='color:{}'>{:>3.2f}%".\
+                          format(msg, t_stamp(tstamp), color, abs(change_pct))
             rate_html += "</span></pre>"
 
             # If more than 24 hours have passed between the most recent
