@@ -1,7 +1,7 @@
-from json import loads
+from decimal import Decimal, getcontext
 from urllib.request import urlopen
 from time import strftime, localtime
-from decimal import Decimal, getcontext
+from json import loads
 import logging
 import boto3
 
@@ -30,7 +30,7 @@ import boto3
 '''
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)          # Set to INFO for more detail
 
 class CurrencyLayer:
 
@@ -63,7 +63,7 @@ class CurrencyLayer:
 
     def cl_validate(self):
         """Open supplied URL. If initial open is successful, read contents
-           to determine if API call was successful. If successful self.rate_dict
+           to determine if API call was successful. If successful, rate_dict
            will contain dictionary data structure containing rate quotes. If
            unsuccessful, log errors to CloudWatch and raise exception.
         """
@@ -114,27 +114,28 @@ class CurrencyLayer:
         rate_html += "</form></div>"
 
         spread = spread / 100               # convert to percentage
-        #rate_html += "<br>"
 
-        # Establish a connection to Persistent AWS Database
-        # Assume database has been created and table initialized
+        # Establish a connection to Persistent AWS Database. We will assume
+        # that DynamoDB database has been created and table initialized with
+        # Abbr as the HASH Key.
         #
         # Database will look like this:
         #
-        #   +------+----------+------------+
-        #   | Abbr | Rate     | Tstamp     |
-        #   +------+----------+------------+
-        #   | AED  |  3.67305 | 1545828846 |
-        #   | AFN  |  74.9502 | 1545828846 |
-        #   | ALL  |   107.62 | 1545828846 |
-        #   | AMD  |   484.53 | 1545828846 |
-        #   | ANG  |  1.77575 | 1545828846 |
+        #   +---------+-----------+-----------+
+        #   | Abbr    | Rate      | Tstamp    |
+        #   |{String} | {Decimal} | {Decimal} |
+        #   +---------+-----------+------------+
+        #   |   AED   |  3.67305 | 1545828846 |
+        #   |   AFN   |  74.9502 | 1545828846 |
+        #   |   ALL   |   107.62 | 1545828846 |
+        #   |   AMD   |   484.53 | 1545828846 |
+        #   |   ANG   |  1.77575 | 1545828846 |
         #   ...
 
         table = db_connect(DYNAMO_DB_TABLE)
 
-        # Itterate over each current rate and display results in HTML
-        # along with percentage spread and change percentage. Use
+        # Itterate over each exchange rate and display results in HTML
+        # along with percentage spread and change percentage. We use a
         # persistent database to compare saved values with current quotes
 
         for exch, cur_rate in self.rate_dict['quotes'].items():
@@ -147,11 +148,11 @@ class CurrencyLayer:
             old = (response['Rate'])
             tstamp = (response['Tstamp'])
 
-            # Convert current rate float to fixed point decimal value by
-            # first converting to string. This is required to maintain
-            # desired precision.
+            # Since we are doing Decimal arithmetic, convert cur_rate to
+            # Decimal if necessary
 
-            cur_rate = Decimal(str(cur_rate))
+            if not isinstance(cur_rate, Decimal):
+                cur_rate = Decimal(str(cur_rate))
 
             logger.info('For {}: Old Quote= {} New Quote= {}'.\
                          format(abbr, old, cur_rate))
@@ -182,7 +183,7 @@ class CurrencyLayer:
             # current rate to prevent divide by zero exception and
             # convert to Decimal type to maintain precision.
 
-            old_rate = Decimal(cur_rate) if (old == '0.0') else Decimal(old)
+            old_rate = cur_rate if (old == '0.0') else Decimal(old)
 
             change_pct = (1 - (cur_rate / old_rate)) * 100
 
@@ -209,7 +210,7 @@ class CurrencyLayer:
             logger.info("{} hours since last database update".\
                          format(time_delta/(60*60)))
 
-            if (time_delta > (24*60*60)):
+            if time_delta > (24*60*60):
                 dynamo_update(table, abbr, cur_rate, cl_ts)
             else:
                 logger.info("Less than 24 hours since last quote update")
@@ -270,8 +271,8 @@ def db_connect(db_table):
     '''Confirm access to DynamoDB and return table object'''
 
     try:
-        db = boto3.resource('dynamodb')
-        table = db.Table(db_table)
+        dynamo_db = boto3.resource('dynamodb')
+        table = dynamo_db.Table(db_table)
     except:
         logger.error("In db_connect(): Could not connect to DynamoDB.")
     else:
@@ -322,7 +323,8 @@ def dynamo_query(table, abbr):
 def t_stamp(t):
     '''Utility function to format date and time from passed UNIX time'''
 
-    return(strftime('%y-%m-%d %H:%M %Z', localtime(t)))
+    #return(strftime('%y-%m-%d %H:%M %Z', localtime(t)))
+    return(strftime('%d %b %Y %H:%M %Z', localtime(t)))
 
 
 def build_resp(event):
@@ -333,6 +335,7 @@ def build_resp(event):
     # Import variable definitions associated with CurrencyLayer service
 
     from currency_config import CL_KEY, BASE, MODE, basket, api_spread
+
     from currency_config import MAIN_CSS_HREF, CURR_ABBRS
 
     # If options passed as URL parameters, replace default values accordingly
