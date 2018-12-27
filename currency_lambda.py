@@ -425,7 +425,7 @@ def build_resp(event):
     html_js = "<script type='text/javascript'>"
     html_js += "'use strict';"
 
-    html_js += "var _base = getURIbase() + '\u003Fcurrencies={}';".format(basket)
+    html_js += "var _base = getURIbase() + '?currencies={}';".format(basket)
 
     html_js += "function getURIbase() {"
     html_js +=    "var getUrl = window.location;"
@@ -440,7 +440,7 @@ def build_resp(event):
 
     html_js += "function changeSpread(action) {"
     html_js +=    "var _spr = document.getElementById('spread_input').value;"
-    html_js +=    "var _url = _base + '\u0026spread=' + _spr;"
+    html_js +=    "var _url = _base + '&spread=' + _spr;"
     html_js +=    "location.replace(`${_url}`);"
     html_js +=    "}"
 
@@ -448,7 +448,7 @@ def build_resp(event):
     html_js +=    "var _spr = document.getElementById('spread_input').value;"
     html_js +=    "var _abbr = document.getElementById('currency_abbr').value;"
     html_js +=    "if (_abbr) {"
-    html_js +=      "var _url = _base + ',' + _abbr + '\u0026spread=' + _spr;"
+    html_js +=      "var _url = _base + ',' + _abbr + '&spread=' + _spr;"
     html_js +=      "location.replace(`${_url}`);"
     html_js +=    "} else {"
     html_js +=      "alert('Please select a currency');"
