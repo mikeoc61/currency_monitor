@@ -18,15 +18,22 @@ div {
 
 pre {
   font-size: 2.5vmin;
+  line-height: 0.4 !important;
+  color: white;
+  background-color: #5600bb;
+  border: 0px;
   text-align:center;
   font-family:Consolas,monospace;
   padding: .5vh 5px; margin: 1vh 0;
   }
 
 p {
-  text-align:center; font-size: 2.2vmin;
-  padding: .5vh .3vw; margin: 1vh .3vw;
-  font-family:Arial, verdana; font-weight:300;
+  text-align:center; 
+  font-size: 2.2vmin;
+  padding: .5vh .3vw; 
+  margin: 1vh .3vw;
+  font-family:Arial, verdana; 
+  font-weight:300;
   }
 
 h1 {
@@ -45,7 +52,7 @@ h3 {
   }
 
 .center {
-  margin: 5px 2px;
+  margin: 20px 5px;
   padding: 1px;
   text-align: center;
   line-height: 0.4;
@@ -58,7 +65,7 @@ h3 {
 }
 
 .button {
-  padding: .2em .4em;
+  padding: .3em .4em;
   margin: .3em .4em;
   text-align: center;
   vertical-align: middle;
@@ -71,7 +78,7 @@ h3 {
   transition: all 0.25s;
   color: black;
   background-color: #d9b826;
-  border: 1px solid black;
+  border: 1.5px solid black;
 }
 
 .button:hover{color:white; border-color:#d9b826;}
@@ -83,7 +90,6 @@ h3 {
   font-family: Arial, verdana;
   text-align: center;
   vertical-align: middle;
-  display: inline;
   text-decoration: none;
   color: #d9b826;
   background-color: #5600bb;
