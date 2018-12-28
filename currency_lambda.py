@@ -373,7 +373,11 @@ def build_resp(event):
     html_head += "<head>"
     html_head += "<title>Display Currency Exchange Rates</title>"
     html_head += "<meta charset='utf-8'>"
+    html_head += "<meta http-equiv='X-UA-Compatible' content='IE=edge'>"
     html_head += "<meta name='viewport' content='width=device-width'>"
+
+    html_head += "<meta name='description' content='Currency Exchange Rates'>"
+    html_head += "<meta name='author' content='Michael E. OConnor'>"
 
     # Stop annoying favicon.ico download attempts / failure
 
