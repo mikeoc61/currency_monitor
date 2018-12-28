@@ -1,15 +1,19 @@
 # currency_monitor
 
-Currency Monitor provide an easy way to monitor a basket of foreign currencies.
+Currency Monitor provides an easy way to monitor a basket of foreign currencies.
 Using the Currency Layer Web Service, the program queries the service for the
 latest quotations relative to the US dollar (USD) displays results. Using the
 free tier, price quotes are guaranteed to be no more than 60 minutes old.
-More frequent updates are available at higher price tiers. 
+More frequent updates are available at higher price tiers.
 
-I've implemented both command line and lambda versions of the program.
+The initial or default basket of currencies is configurable and up to 168
+currencies can be added.
 
-- exchange.py is a command line version which displays updates once per hour
-   to the console (terminal).
+I've implemented both command line and AWS lambda versions of the program.
+
+- exchange.py is the command line version which displays updates once per hour
+   to the console (terminal). Program also provide a progress bar showing When
+   the next update will occur based on timestamp provided by the service.
 
 - lambda.py is a simplified version for AWS lambda that runs once and returns
   results as a formatted Web page. Program uses HTML, CSS and Javascript. Since
