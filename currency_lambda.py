@@ -472,3 +472,29 @@ def lambda_handler(event, context):
     logger.info('Context: {}'.format(context))
 
     return build_resp(event)
+
+
+def main():
+    '''Main() used to simulate lambda event handler. Constructs event dict,
+       calls build_resp and prints HTML/CSS/Javascript to console which can
+       then be sent to a file and opened by a web browser.
+    '''
+
+    event = {
+        'params': {
+            'querystring': {
+                'currencies': '',
+                'spread': '1.00'
+                }
+            }
+        }
+
+    print(build_resp(event))
+
+
+if __name__ == '__main__':
+    """When invoked from shell, call signal() to handle CRTL-C from user
+       and invoke main() function
+    """
+
+    main()
