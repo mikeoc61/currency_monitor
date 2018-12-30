@@ -8,7 +8,7 @@ import boto3
 '''Currency Exchange Rate program deployed as AWS Lambda function.
    Builds a web page based on user specified URI and Currency Exchange rates.
    Allows user to specify spread percentage and add new currencies from a large
-   basket of currencies supported by the Currency Layer web service.
+   basket of international currencies supported by the Currency Layer web service.
 
    Program utilizes the following external data sources:
 
@@ -26,7 +26,7 @@ import boto3
 
    Author: Michael O'Connor
 
-   Last update: 12/26/18
+   Last update: 12/30/18
 '''
 
 logger = logging.getLogger()
@@ -193,13 +193,13 @@ class CurrencyLayer:
             # Also, add hover to text showing time basis for percentage change.
 
             if change_pct >= 0.1:
-                color = 'red'
+                color = '#f44141'           # Bright Red
             elif change_pct <= -0.1:
-                color = 'green'
+                color = '#62f442'           # Bright Green
             else:
                 color = 'white'
 
-            rate_html += "<pre>{} <span title='USD % Change since: {}'\
+            rate_html += "<pre>{} <span title='Change since: {}'\
                           style='color:{}'>{:>3.2f}%".\
                           format(msg, t_stamp(tstamp), color, abs(change_pct))
             rate_html += "</span></pre>"
@@ -250,7 +250,7 @@ class CurrencyLayer:
 
         basket_list = self.basket.split(',')
 
-        select_html = "<div id='cur_select' class='myForm'>"
+        select_html = "<br><div id='cur_select' class='myForm'>"
         select_html += "<form id='currency_form' action='#' "
         select_html += "onsubmit=\"addCurrency('text');return false\">"
         select_html += "<label for='select_label'></label>"
@@ -325,8 +325,20 @@ def dynamo_query(table, abbr):
 def t_stamp(t):
     '''Utility function to format date and time from passed UNIX time'''
 
-    #return(strftime('%y-%m-%d %H:%M %Z', localtime(t)))
     return(strftime('%d %b %Y %H:%M %Z', localtime(t)))
+
+
+def fetch_html(url):
+    '''Given a Web URL, open file, remove whitespace and return as string'''
+    response = []
+    with urlopen(url) as html:
+        for line in html:
+            line = line.decode("utf-8")
+            response.append(line.strip())
+            if not line:
+                continue
+
+    return ''.join(response)
 
 
 def build_resp(event):
@@ -337,8 +349,8 @@ def build_resp(event):
     # Import variable definitions associated with CurrencyLayer service
 
     from currency_config import CL_KEY, BASE, MODE, basket, api_spread
-
-    from currency_config import MAIN_CSS_HREF, CURR_ABBRS
+    from currency_config import CURR_ABBRS, CURRENCY_HEAD_HTML, CURRENCY_NAV_BAR
+    from currency_config import CURRENCY_MAIN_CSS
 
     # If options passed as URL parameters, replace default values accordingly
 
@@ -369,32 +381,30 @@ def build_resp(event):
     else:
         rates = cl_feed.get_rates(api_spread)
 
+    # Build HTML Header
+
     html_head = "<!DOCTYPE html>"
     html_head += "<head>"
-    html_head += "<title>Display Currency Exchange Rates</title>"
-    html_head += "<meta charset='utf-8'>"
-    html_head += "<meta http-equiv='X-UA-Compatible' content='IE=edge'>"
-    html_head += "<meta name='viewport' content='width=device-width'>"
 
-    html_head += "<meta name='description' content='Currency Exchange Rates'>"
-    html_head += "<meta name='author' content='Michael E. OConnor'>"
+    # Load HTML Header as defined in config file
 
-    # Stop annoying favicon.ico download attempts / failure
+    html_head += fetch_html(CURRENCY_HEAD_HTML)
 
-    html_head += "<link rel='icon' href='data:,'>"
+    # Load CSS Stylesheet as defined in config file
 
-    # Import CSS style config from location defined in config file
-
-    html_head += "<link rel='stylesheet' type='text/css' media='screen'"
-    html_head += "href={}>".format(MAIN_CSS_HREF)
+    html_head += "<link rel='stylesheet' href='{}'>".format(CURRENCY_MAIN_CSS)
     html_head += "</head>"
 
+    # Build main HTML body of program
+
     html_body = "<body>"
-    html_body += "<h1>Currency Exchange Rates</h1>"
+    html_body = html_body + fetch_html(CURRENCY_NAV_BAR)
+
+    html_body += "<div class='container'>"
 
     # Output list of currency exchange rates
 
-    html_body += "<div class='center'>"
+    html_body += "<div class='center' style='margin-top: 70px'>"
     html_body +=    "<div>"
     html_body +=        rates
     html_body +=    "</div>"
@@ -460,6 +470,15 @@ def build_resp(event):
     html_js +=    "}"
 
     html_js += "</script>"
+
+    # jQuery (necessary for Bootstrap's JavaScript plugins)
+
+    html_js += "<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js'></script>"
+
+    # Include all compiled Bootstrap plugins, or include individual files as needed
+
+    html_js += "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js' crossorigin='anonymous'></script>"
+
     html_tail = '</html>'
 
     resp = html_head + html_body + html_js + html_tail

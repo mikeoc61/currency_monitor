@@ -6,9 +6,11 @@ MODE = 'live'                               # Use live mode (vs. list)
 basket = 'EUR,GBP,JPY,CHF,AUD,CAD'          # Default Currency basket
 api_spread = 1.0                            # Default spread = 1.0%
 
-# Defines location of CSS Stylesheet
+# Location of project resources - currenly using S3 bucket via CloudFront
 
-MAIN_CSS_HREF = 'https://s3.amazonaws.com/mikeoc.me/CSS/Currency/main.css'
+CURRENCY_MAIN_CSS = 'https://www.mikeoc.me/projects/currency/currency_main.css'
+CURRENCY_HEAD_HTML = 'https://www.mikeoc.me/projects/currency/currency_head.html'
+CURRENCY_NAV_BAR = 'https://www.mikeoc.me/projects/currency/currency_navbar.html'
 
 # AWS DynamoDB key variables
 
