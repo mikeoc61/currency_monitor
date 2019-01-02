@@ -2,7 +2,7 @@
 
 Currency Monitor provides an easy way to monitor a basket of foreign currencies.
 Using the Currency Layer Web Service, the program queries the service for the
-latest quotations relative to the US dollar (USD) displays results. Using the
+latest quotations relative to the US dollar (USD) and displays results. Using the
 free tier, price quotes are guaranteed to be no more than 60 minutes old.
 More frequent updates are available at higher price tiers.
 
@@ -34,15 +34,14 @@ I've implemented both command line and AWS lambda versions of the program.
 
 - currency_config.py contains various configuration definitions along   
   with currency abbreviations and their associated descriptions. This file is
-  only used with the lambda versions.
+  only used with the lambda versions and also references other CSS and HTML files
+  stored remotely to be loaded at runtime. 
 
-- main.css contains CSS Stylesheet formatting which is copied to a publicly
-  accessible AWS S3 bucket and linked to from both lambda versions.
 
 ## Dependencies:
 
 Command line version requires that CL_KEY environment variable be set prior to
-execution. The lambda version expects the key and other variable to be defined
+execution. The lambda version expects the key and other variables to be defined
 in currency_config.py.
 
 To obtain a CL key and review pricing options visit: https://currencylayer.com
