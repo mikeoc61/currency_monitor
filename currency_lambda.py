@@ -381,30 +381,23 @@ def build_resp(event):
     else:
         rates = cl_feed.get_rates(api_spread)
 
-    # Build HTML Header
-
-    html_head = "<!DOCTYPE html>"
-    html_head += "<head>"
-
     # Load HTML Header as defined in config file
 
-    html_head += fetch_html(CURRENCY_HEAD_HTML)
+    html_head = fetch_html(CURRENCY_HEAD_HTML)
 
     # Load CSS Stylesheet as defined in config file
 
     html_head += "<link rel='stylesheet' href='{}'>".format(CURRENCY_MAIN_CSS)
-    html_head += "</head>"
 
     # Build main HTML body of program
 
-    html_body = "<body>"
-    html_body = html_body + fetch_html(CURRENCY_NAV_BAR)
+    html_body = fetch_html(CURRENCY_NAV_BAR)
 
     html_body += "<div class='container'>"
 
     # Output list of currency exchange rates
 
-    html_body += "<div class='center' style='margin-top: 70px'>"
+    html_body +=  "<div class='center' style='margin-top: 70px'>"
     html_body +=    "<div>"
     html_body +=        rates
     html_body +=    "</div>"
@@ -429,9 +422,9 @@ def build_resp(event):
     html_body +=        "</button>"
     html_body +=    "</div>"
 
-    html_body += "</div>"
+    html_body +=  "</div>"      # class = 'center'
+    html_body += "</div>"       # class = 'container'
     html_body += "<br><br>"
-    html_body += "</body>"
 
     # Note the following section should ideally be moved to a separate file on
     # S3 similar to what was done with the CSS stylesheeet.
@@ -479,9 +472,16 @@ def build_resp(event):
 
     html_js += "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js' crossorigin='anonymous'></script>"
 
-    html_tail = '</html>'
-
-    resp = html_head + html_body + html_js + html_tail
+    resp = "<!DOCTYPE html>" \
+            + "<html lang='en'>" \
+            + "<head>" \
+                + html_head \
+            + "</head>" \
+            + "<body>" \
+                + html_body \
+                + html_js \
+            +  "</body>" \
+            + "</html>"
 
     return resp
 
