@@ -381,7 +381,7 @@ def build_resp(event):
 
     html_body = fetch_html(CURRENCY_NAV_BAR)
 
-    html_body += "<article class='container'>"
+    html_body += "<article class='mycontainer'>"
     html_body += "<section class='center' style='margin-top: 70px'>"
 
     # Instantiate currency_layer() object and confirm access to Currency Service
@@ -412,7 +412,7 @@ def build_resp(event):
     html_body += "</div>"
 
     html_body += "</section>"       # class = 'center'
-    html_body += "</article>"       # class = 'container'
+    html_body += "</article>"       # class = 'mycontainer'
 
     # Javascript functions to build URI and control button press behavior
     # Note the following JS section should ideally be moved to a separate file
