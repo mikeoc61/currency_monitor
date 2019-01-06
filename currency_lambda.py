@@ -26,7 +26,7 @@ import boto3
 
    Author: Michael O'Connor
 
-   Last update: 12/27/18
+   Last update: 01/06/19
 '''
 
 logger = logging.getLogger()
@@ -54,6 +54,7 @@ class CurrencyLayer:
 
         self.basket = basket
         self.rate_dict = {}
+        self.cl_ts = 12345678
 
         # Working with Decimal numbers so set precision to prevent strange
         # floating point approximations
@@ -64,8 +65,9 @@ class CurrencyLayer:
     def cl_validate(self):
         """Open supplied URL. If initial open is successful, read contents
            to determine if API call was successful. If successful, rate_dict
-           will contain dictionary data structure containing rate quotes. If
-           unsuccessful, log errors to CloudWatch and raise exception.
+           will contain dictionary data structure containing rate quotes and
+           quote timestamp. If unsuccessful, log errors to CloudWatch and
+           raise exception.
         """
         try:
             webUrl = urlopen (self.cl_url)
@@ -81,6 +83,7 @@ class CurrencyLayer:
                 logger.error('Error= {}'.format(self.rate_dict['error']['info']))
                 raise Exception
             else:
+                self.cl_ts = self.rate_dict['timestamp']
                 logger.info('SUCCESS: In cl_validate(): response= {}'.\
                              format(self.rate_dict))
 
@@ -95,15 +98,10 @@ class CurrencyLayer:
 
         spread = Decimal(spread)
 
-        cl_ts = self.rate_dict['timestamp']
-        rate_html = "<h2>As of " + t_stamp(cl_ts) + "</h2>"
-
-        logger.info("Currency Layer Last update: " + t_stamp(cl_ts))
-
         # Create Form to enable manipulation of Spread within a range
         # This approach also provides input validation
 
-        rate_html += "<div id='inputs' class='myForm' text-align: center>"
+        rate_html = "<div id='inputs' class='myForm' text-align: center>"
         rate_html += "<form id='spread_form' action='#' "
         rate_html +=   "onsubmit=\"changeSpread('text');return false\">"
         rate_html += "<label for='spread_label'>Spread:  </label>"
@@ -208,12 +206,12 @@ class CurrencyLayer:
             # quote timestamp and time quote was last saved to the database,
             # update both the quote and timestamp in the database.
 
-            time_delta = (Decimal(cl_ts - Decimal(tstamp)))
+            time_delta = (Decimal(self.cl_ts - Decimal(tstamp)))
             logger.info("{} hours since last database update".\
                          format(time_delta/(60*60)))
 
             if time_delta > (24*60*60):
-                dynamo_update(table, abbr, cur_rate, cl_ts)
+                dynamo_update(table, abbr, cur_rate, self.cl_ts)
             else:
                 logger.info("Less than 24 hours since last quote update")
 
@@ -241,6 +239,12 @@ class CurrencyLayer:
                     rate_html += "<p>{} = {}</p>".format(abbr, "Unknown")
 
         return rate_html
+
+
+    def get_ts(self):
+        '''Simply return timestamp from Currency Layer feed'''
+
+        return self.cl_ts
 
 
     def build_select(self, cl_abbrs):
@@ -352,7 +356,7 @@ def build_resp(event):
     from currency_config import CURR_ABBRS, CURRENCY_HEAD_HTML, CURRENCY_NAV_BAR
     from currency_config import CURRENCY_MAIN_CSS
 
-    # If options passed as URL parameters, replace default values accordingly
+    # If options passed as URL parameters, use to replace default values
 
     try:
         options = event['params']['querystring']
@@ -385,6 +389,8 @@ def build_resp(event):
     html_body += "<section class='center' style='margin-top: 70px'>"
 
     # Instantiate currency_layer() object and confirm access to Currency Service
+    # If successful, cl_ts will be updated with latest quote timestamp. Call
+    # get_rates() method called to convert raw quote date to formatted HTML
 
     try:
         cl_feed = CurrencyLayer(BASE, MODE, CL_KEY, basket)
@@ -393,17 +399,18 @@ def build_resp(event):
         html_body += "<h2>Error: unable to instantiate currency_layer()</h2>"
         html_body += "<h3>Please see Lambda CloudWatch Logs</h3>"
     else:
+        html_body += "<h2>As of " + t_stamp(cl_feed.cl_ts) + "</h2>"
         html_body += cl_feed.get_rates(api_spread)
 
     # Provide button to add new currencies to basket
 
     html_body += cl_feed.build_select(CURR_ABBRS)
 
-    # Display list of definitions for currency basket
+    # Display list of abbreviation definitions for currency basket
 
     html_body += cl_feed.get_list(CURR_ABBRS)
 
-    # Provide button to reset currency basket and spread to default
+    # Provide button to reset currency basket and spread to defaults
 
     html_body += "<div>"
     html_body +=    "<button class='button' onclick='resetDefaults()'>"
@@ -414,9 +421,7 @@ def build_resp(event):
     html_body += "</section>"       # class = 'center'
     html_body += "</article>"       # class = 'mycontainer'
 
-    # Javascript functions to build URI and control button press behavior
-    # Note the following JS section should ideally be moved to a separate file
-    # on S3 similar to what was done with the CSS stylesheeet.
+    # Javascript functions to rebuild Lambda URI and handle button press events
 
     html_js = "<script type='text/javascript'>"
     html_js += "'use strict';"
@@ -447,10 +452,9 @@ def build_resp(event):
     html_js +=      "var _url = _base + ',' + _abbr + '&spread=' + _spr;"
     html_js +=      "location.replace(`${_url}`);"
     html_js +=    "} else {"
-    html_js +=      "alert('Please select a currency');"
+    html_js +=      "alert('Please select a currency before submitting');"
     html_js +=      "}"
     html_js +=    "}"
-
     html_js += "</script>"
 
     # jQuery (necessary for Bootstrap's JavaScript plugins)
