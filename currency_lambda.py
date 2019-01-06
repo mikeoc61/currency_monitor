@@ -26,7 +26,7 @@ import boto3
 
    Author: Michael O'Connor
 
-   Last update: 12/30/18
+   Last update: 12/27/18
 '''
 
 logger = logging.getLogger()
@@ -250,7 +250,7 @@ class CurrencyLayer:
 
         basket_list = self.basket.split(',')
 
-        select_html = "<br><div id='cur_select' class='myForm'>"
+        select_html = "<div id='cur_select' class='myForm'>"
         select_html += "<form id='currency_form' action='#' "
         select_html += "onsubmit=\"addCurrency('text');return false\">"
         select_html += "<label for='select_label'></label>"
@@ -367,19 +367,7 @@ def build_resp(event):
                 if val:
                     api_spread = Decimal(val)
 
-    logger.info('Basket: {} Spread: {}'.format(basket, api_spread))
-
-    # Instantiate currency_layer() object and confirm we can access Currency
-    # Layer Web Service
-
-    try:
-        cl_feed = CurrencyLayer(BASE, MODE, CL_KEY, basket)
-        cl_feed.cl_validate()
-    except:
-        rates = "<h2>Error: unable to instantiate currency_layer()</h2>"
-        rates += "<h3>Please see Lambda CloudWatch Logs</h3>"
-    else:
-        rates = cl_feed.get_rates(api_spread)
+    logger.info('Currency Basket: {} Spread: {}'.format(basket, api_spread))
 
     # Load HTML Header as defined in config file
 
@@ -393,41 +381,42 @@ def build_resp(event):
 
     html_body = fetch_html(CURRENCY_NAV_BAR)
 
-    html_body += "<div class='container'>"
+    html_body += "<article class='container'>"
+    html_body += "<section class='center' style='margin-top: 70px'>"
 
-    # Output list of currency exchange rates
+    # Instantiate currency_layer() object and confirm access to Currency Service
 
-    html_body +=  "<div class='center' style='margin-top: 70px'>"
-    html_body +=    "<div>"
-    html_body +=        rates
-    html_body +=    "</div>"
+    try:
+        cl_feed = CurrencyLayer(BASE, MODE, CL_KEY, basket)
+        cl_feed.cl_validate()
+    except:
+        html_body += "<h2>Error: unable to instantiate currency_layer()</h2>"
+        html_body += "<h3>Please see Lambda CloudWatch Logs</h3>"
+    else:
+        html_body += cl_feed.get_rates(api_spread)
 
-    # Add a new currency to basket
+    # Provide button to add new currencies to basket
 
-    html_body +=    "<div>"
-    html_body +=        cl_feed.build_select(CURR_ABBRS)
-    html_body +=    "</div>"
+    html_body += cl_feed.build_select(CURR_ABBRS)
 
-    # Output list of currency definitions
+    # Display list of definitions for currency basket
 
-    html_body +=    "<div>"
-    html_body +=        cl_feed.get_list(CURR_ABBRS)
-    html_body +=    "</div>"
+    html_body += cl_feed.get_list(CURR_ABBRS)
 
     # Provide button to reset currency basket and spread to default
 
-    html_body +=    "<div>"
-    html_body +=        "<button class='button' onclick='resetDefaults()'>"
-    html_body +=        "Reset Currencies and Spread"
-    html_body +=        "</button>"
-    html_body +=    "</div>"
+    html_body += "<div>"
+    html_body +=    "<button class='button' onclick='resetDefaults()'>"
+    html_body +=    "Reset Currencies and Spread"
+    html_body +=    "</button>"
+    html_body += "</div>"
 
-    html_body +=  "</div>"      # class = 'center'
-    html_body += "</div>"       # class = 'container'
-    html_body += "<br><br>"
+    html_body += "</section>"       # class = 'center'
+    html_body += "</article>"       # class = 'container'
 
-    # Note the following section should ideally be moved to a separate file on
-    # S3 similar to what was done with the CSS stylesheeet.
+    # Javascript functions to build URI and control button press behavior
+    # Note the following JS section should ideally be moved to a separate file
+    # on S3 similar to what was done with the CSS stylesheeet.
 
     html_js = "<script type='text/javascript'>"
     html_js += "'use strict';"
@@ -472,15 +461,12 @@ def build_resp(event):
 
     html_js += "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js' crossorigin='anonymous'></script>"
 
+    # Assemble DOM and return to caller, typically main() or lambda_handler()
+
     resp = "<!DOCTYPE html>" \
             + "<html lang='en'>" \
-            + "<head>" \
-                + html_head \
-            + "</head>" \
-            + "<body>" \
-                + html_body \
-                + html_js \
-            +  "</body>" \
+            + "<head>" + html_head + "</head>" \
+            + "<body>" + html_body + html_js + "</body>" \
             + "</html>"
 
     return resp
@@ -499,8 +485,8 @@ def lambda_handler(event, context):
 
 def main():
     '''Main() used to simulate lambda event handler. Constructs event dict,
-       calls build_resp and prints HTML/CSS/Javascript to console which can
-       then be sent to a file and opened by a web browser.
+       calls build_resp() and prints HTML/CSS/Javascript to console which can
+       then be directed to a file and opened with a web browser.
     '''
 
     event = {
@@ -516,8 +502,6 @@ def main():
 
 
 if __name__ == '__main__':
-    """When invoked from shell, call signal() to handle CRTL-C from user
-       and invoke main() function
-    """
+    """When invoked from shell, invoke main() function"""
 
     main()
