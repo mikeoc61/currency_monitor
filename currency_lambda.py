@@ -26,11 +26,11 @@ import boto3
 
    Author: Michael O'Connor
 
-   Last update: 01/06/19
+   Last update: 12/27/18
 '''
 
 logger = logging.getLogger()
-logger.setLevel(logging.ERROR)          # Set to INFO for more detail
+logger.setLevel(logging.INFO)          # Set to INFO for more detail
 
 class CurrencyLayer:
 
@@ -105,9 +105,9 @@ class CurrencyLayer:
         rate_html += "<form id='spread_form' action='#' "
         rate_html +=   "onsubmit=\"changeSpread('text');return false\">"
         rate_html += "<label for='spread_label'>Spread:  </label>"
-        rate_html += "<input id='spread_input' type='number' min='.10' \
-                             max='2.0' step='.05' size='4' maxlength='4' \
-                             value='{:3.2f}'>".format(spread)
+        rate_html += "<input id='spread_input' type='number' min='.10' "
+        rate_html +=  "max='2.0' step='.05' size='4' maxlength='4' "
+        rate_html +=  "value='{:3.2f}'>".format(spread)
         rate_html += "<input type='submit' class='button'>"
         rate_html += "</form></div>"
 
@@ -197,9 +197,9 @@ class CurrencyLayer:
             else:
                 color = 'white'
 
-            rate_html += "<pre>{} <span title='Change since: {}'\
-                          style='color:{}'>{:>3.2f}%".\
-                          format(msg, t_stamp(tstamp), color, abs(change_pct))
+            rate_html += "<pre>{}<span ".format(msg)
+            rate_html += "title='Change since: {}' ".format(t_stamp(tstamp))
+            rate_html += "style='color:{}'> {:>3.2f}%".format(color, abs(change_pct))
             rate_html += "</span></pre>"
 
             # If more than 24 hours have passed between the most recent
