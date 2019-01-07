@@ -32,8 +32,8 @@ I've implemented both command line and AWS lambda versions of the program.
   table is created typically using the AWS console or AWS CLI. This can also be
   used at any time to re-establish a baseline for change comparisons.
 
-- currency_config.py contains various configuration definitions along   
-  with currency abbreviations and their associated descriptions. This file is
+- currency_config.py contains various configuration definitions along with
+  currency abbreviations and their associated descriptions. This file is
   only used with the lambda versions and also references other CSS and HTML files
   stored remotely to be loaded at runtime.
 
