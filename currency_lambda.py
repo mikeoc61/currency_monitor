@@ -26,7 +26,7 @@ import boto3
 
    Author: Michael O'Connor
 
-   Last update: 12/27/18
+   Last update: 01/07/19
 '''
 
 logger = logging.getLogger()
@@ -136,6 +136,8 @@ class CurrencyLayer:
         # along with percentage spread and change percentage. We use a
         # persistent database to compare saved values with current quotes
 
+        rate_html += "<div class='quotes'>"
+
         for exch, cur_rate in self.rate_dict['quotes'].items():
 
             abbr = exch[-3:]
@@ -214,6 +216,8 @@ class CurrencyLayer:
                 dynamo_update(table, abbr, cur_rate, self.cl_ts)
             else:
                 logger.info("Less than 24 hours since last quote update")
+
+        rate_html += "</div>"       # class='quotes'
 
         return rate_html
 
