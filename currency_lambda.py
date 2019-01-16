@@ -15,7 +15,7 @@ import boto3
    1) Currency Layer Exchange Rate service for latest exchange rates
    2) AWS DynamoDB database to store historical rates and timestamps
    3) AWS API Gateway to provide a formatted query and response to a client
-   4) AWS S3 to hold CSS stylesheet
+   4) AWS S3 to store CSS stylesheet, HTML footer and nav bar, and Javascript
 
    Program utilizes the following technologies:
 
@@ -26,7 +26,7 @@ import boto3
 
    Author: Michael O'Connor
 
-   Last update: 01/07/19
+   Last update: 01/16/2019
 '''
 
 logger = logging.getLogger()
@@ -358,7 +358,7 @@ def build_resp(event):
 
     from currency_config import CL_KEY, BASE, MODE, basket, api_spread
     from currency_config import CURR_ABBRS, CURRENCY_HEAD_HTML, CURRENCY_NAV_BAR
-    from currency_config import CURRENCY_MAIN_CSS
+    from currency_config import CURRENCY_FOOTER, CURRENCY_JS, CURRENCY_MAIN_CSS
 
     # If options passed as URL parameters, use to replace default values
 
@@ -389,8 +389,8 @@ def build_resp(event):
 
     html_body = fetch_html(CURRENCY_NAV_BAR)
 
-    html_body += "<article class='mycontainer'>"
-    html_body += "<section class='center' style='margin-top: 70px'>"
+    html_body += "<main class='mycontainer'>"
+    html_body +=  "<section class='center' style='margin-top: 70px'>"
 
     # Instantiate currency_layer() object and confirm access to Currency Service
     # If successful, cl_ts will be updated with latest quote timestamp. Call
@@ -403,7 +403,7 @@ def build_resp(event):
         html_body += "<h2>Error: unable to instantiate currency_layer()</h2>"
         html_body += "<h3>Please see Lambda CloudWatch Logs</h3>"
     else:
-        html_body += "<h2>As of " + t_stamp(cl_feed.cl_ts) + "</h2>"
+        html_body += "<h2 id=t_stamp>As of " + t_stamp(cl_feed.cl_ts) + "</h2>"
         html_body += cl_feed.get_rates(api_spread)
 
     # Provide button to add new currencies to basket
@@ -414,52 +414,27 @@ def build_resp(event):
 
     html_body += cl_feed.get_list(CURR_ABBRS)
 
-    # Provide button to reset currency basket and spread to defaults
+    # Provide button to reset currency basket and spread % to defaults
 
-    html_body += "<div>"
-    html_body +=    "<button class='button' onclick='resetDefaults()'>"
+    html_body +=  "<button class='button' onclick='resetDefaults()'>"
     html_body +=    "Reset Currencies and Spread"
-    html_body +=    "</button>"
-    html_body += "</div>"
+    html_body +=  "</button>"
 
-    html_body += "</section>"       # class = 'center'
-    html_body += "</article>"       # class = 'mycontainer'
+    html_body +=  "</section>"       # class = 'center'
+    html_body += "</main>"       # class = 'mycontainer'
 
-    # Javascript functions to rebuild Lambda URI and handle button press events
+    html_body += fetch_html(CURRENCY_FOOTER)
+
+    # Load Javascript functions used to rebuild Lambda URI, handle user events
+    # and convert CL Timestamp un UTC Epoch time to local timezone. Need some
+    # small amount handled by Python inline in order to define key variables
 
     html_js = "<script type='text/javascript'>"
-    html_js += "'use strict';"
-
-    html_js += "var _base = getURIbase() + '?currencies={}';".format(basket)
-
-    html_js += "function getURIbase() {"
-    html_js +=    "var getUrl = window.location;"
-    html_js +=    "var baseUrl = getUrl.origin + getUrl.pathname;"
-    html_js +=    "return baseUrl"
-    html_js +=    "}"
-
-    html_js += "function resetDefaults() {"
-    html_js +=    "location.replace(getURIbase());"
-    html_js +=    "return false;"
-    html_js +=    "}"
-
-    html_js += "function changeSpread(action) {"
-    html_js +=    "var _spr = document.getElementById('spread_input').value;"
-    html_js +=    "var _url = _base + '&spread=' + _spr;"
-    html_js +=    "location.replace(`${_url}`);"
-    html_js +=    "}"
-
-    html_js += "function addCurrency(action) {"
-    html_js +=    "var _spr = document.getElementById('spread_input').value;"
-    html_js +=    "var _abbr = document.getElementById('currency_abbr').value;"
-    html_js +=    "if (_abbr) {"
-    html_js +=      "var _url = _base + ',' + _abbr + '&spread=' + _spr;"
-    html_js +=      "location.replace(`${_url}`);"
-    html_js +=    "} else {"
-    html_js +=      "alert('Please select a currency before submitting');"
-    html_js +=      "}"
-    html_js +=    "}"
+    html_js +=  "var _basket = '{}';".format(basket)
+    html_js +=  "var _cl_ts = {};".format(cl_feed.cl_ts)
     html_js += "</script>"
+
+    html_js += "<script src='{}'></script>".format(CURRENCY_JS)
 
     # jQuery (necessary for Bootstrap's JavaScript plugins)
 
@@ -469,7 +444,9 @@ def build_resp(event):
 
     html_js += "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js' crossorigin='anonymous'></script>"
 
-    # Assemble DOM and return to caller, typically main() or lambda_handler()
+    # Assemble DOM and return to caller, either main() or lambda_handler()
+    # main() will then output code to stdout and lambda_handler() will return
+    # output HTML/CSS/JS to trigger function, typically API Gateway -> browser
 
     resp = "<!DOCTYPE html>" \
             + "<html lang='en'>" \
