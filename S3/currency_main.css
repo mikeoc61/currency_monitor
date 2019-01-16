@@ -1,0 +1,141 @@
+/*
+  CSS Styles for Currency Exchange program
+
+  Last Update: 1/7/19
+*/
+
+body {
+    background-color: #d9d9d9;    /* light grey */
+    font-family: Arial, verdana;
+    width: 95vw; margin: 0 auto;
+    min-width: min-content;
+    min-height: min-content;
+    }
+
+p {
+  font-size: 2.4vmin;
+  padding: .5vh;
+  margin: 1vh;
+  }
+
+h1, h2, h3, h4, h5, h6 {
+  text-decoration: underline;
+  text-align: center;
+  color: #d9b826;
+}
+
+h1 {
+  font-size: 5.0vmin;
+  text-decoration: none;
+  margin: 15px;
+  }
+
+h2 {
+  font-size: 3.4vmin;
+  margin: 0px 0 .5em 0;
+  }
+
+h3 {
+  font-size: 2.8vmin;
+  margin: 8px;
+  }
+
+label {
+  font-weight: normal;      /* Overload Bootstrap */
+}
+
+/* custom classes */
+
+.center {
+  margin: 5px;
+  padding: 5px;
+  text-align: center;
+  line-height: 0.5;
+  border: 2px solid #fece00;
+  color: white;
+  background-color: #5600bb;
+  outline: 1px solid gray;
+  outline-offset: 5px;
+  border-radius: 10px;
+}
+
+/* Define attributes for child elements */
+
+/* Rate quotes will use <pre> element and should all be wrapped */
+/* in <div class='quotes'> so we don't overwrite less.css */
+
+.quotes {
+  display: block;
+  text-align: center;
+}
+
+.quotes pre {
+  line-height: .5em;
+  overflow: visible;
+  font-size: 2.4vmin;
+  color: white;
+  background-color: #5600bb;
+  border-style: none;
+  font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+  padding: 0 5px;
+}
+
+/* container for form elements. */
+
+.myForm {
+  margin: .5em auto;
+  font-size: 3vmin;
+  vertical-align: middle;
+  color: #d9b826;
+  display: inline-block;
+  }
+
+.button {
+  padding: .5em .4em;
+  margin: .3em .4em;
+  vertical-align: middle;
+  font-size: 2.5vmin;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.25s;
+  color: black;
+  background-color: #d9b826;
+}
+
+.button:hover{color:white; border-color:#d9b826;}
+.button:hover{background-color:#5600bb;}
+
+input[type=number],
+input[type=text],
+select[type=text] {
+  color: white;
+  background-color: #5600bb;
+  font-size: 2.8vmin;
+  width: 3.5em;
+  margin: .3em .5em;
+  border: 1px solid gray;
+  border-radius: 5px;
+  }
+
+/* Overload default width for Add Currency Button */
+
+select[type=text]{
+  width: 10em;
+}
+
+/* Used for footer section */
+
+.section__footer {
+  min-height: 8vh;
+  border-color: #ccc;
+  border-width: 1px;
+  font-size: 1.8rem;
+  font-style: oblique;
+  text-align: center;
+  padding: 2px 20px;
+  margin: 20px 20px;
+  border-radius: 9px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+  background: linear-gradient(rgba(169, 169, 169, 0.3), rgba(169, 169, 169, 0.7));
+}
