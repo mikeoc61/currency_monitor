@@ -25,7 +25,9 @@ I've implemented both command line and AWS lambda versions of the program.
   to hold previous currency quote results and timestamps which are compared
   with current quotes to determine if the dollar has strengthened or weakened.
   If more than 24 hours have elapsed since last database update, the database
-  quote and timestamps are updated with most current info from Currency Layer service. You can view this version by visiting: https://api.mikeoc.me/service/beta/getExchangeRates
+  quote and timestamps are updated with most current info from Currency Layer
+  service. You can view the latest version
+  by visiting: https://api.mikeoc.me/service/beta/getExchangeRates
 
 - init_dynamo_table.py is used to initialize the DynamoDB table with Abbreviations,
   Current Rates and Timestamp for each supported Currency. Run this once after
@@ -35,12 +37,13 @@ I've implemented both command line and AWS lambda versions of the program.
 - currency_config.py contains various configuration definitions along with
   currency abbreviations and their associated descriptions. This file is
   only used with the lambda versions and also references other CSS and HTML files
-  stored remotely on S3 Object storage and loaded at runtime.
+  stored remotely on S3 Object storage and loaded at runtime. Copies of these
+  additional files are located in the S3 director.
 
-- The S3 directory contains various HTML, CSS and Javascript that is either
-  linked into or read into the currency_lambda.py. These files should be hosted
-  on AWS S3 or similar Object storage. URL to these resources are defined in the
-  currency_config.py configuration file.
+- The S3 directory contains several HTML, CSS and Javascript files that are
+  linked from or read into the currency_lambda.py. These files should be hosted
+  on AWS S3 or similar Object storage. URL path to each resource is defined in
+  the currency_config.py configuration file.
 
 
 ## Dependencies:
