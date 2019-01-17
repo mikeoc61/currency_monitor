@@ -3,7 +3,15 @@
 /*
  * Currency.js v0.9
  * Code is specific to the Currency Exchange Rate Project
- * Copyright 2018 Michael O'Connor
+ *
+ * File is read into the main program with the following code:
+ *
+ *      html_js += "<script src='{}'></script>".format(CURRENCY_JS)
+ *
+ *      CURRENCY_JS is defined in currency_config.py and should point to
+ *      its hosted location on AWS S3
+ *
+ * Copyright 2019 Michael O'Connor
  * Licensed under the MIT license
  */
 
@@ -14,14 +22,14 @@
  *  _cl_ts: Currency Layer timestamp return by API call
  */
 
-console.log('_basket = ' + _basket);
-console.log('_cl_ts = ' + _cl_ts);
+console.log('basket = ' + basket);
+console.log('cl_ts = ' + cl_ts);
 
 // Define global variables used in functions below
 
 var url = window.location;
 var baseUrl = url.origin + url.pathname;
-var urlBasket = baseUrl + '?currencies=' + _basket;
+var urlBasket = baseUrl + '?currencies=' + basket;
 
 // Reset currency basket and spread percentage to defaults
 // by calling Lambda function without optional parameters
@@ -72,4 +80,4 @@ function showDate(tstamp) {
 // Once DOM has fully loaded, reset the Timestamp header using local TZ
 // Use timestamp from Currency Layer call to initialize JS variable
 
-window.onload = showDate(_cl_ts * 1000);
+window.onload = showDate(cl_ts * 1000);

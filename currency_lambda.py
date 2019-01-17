@@ -430,8 +430,8 @@ def build_resp(event):
     # small amount handled by Python inline in order to define key variables
 
     html_js = "<script type='text/javascript'>"
-    html_js +=  "var _basket = '{}';".format(basket)
-    html_js +=  "var _cl_ts = {};".format(cl_feed.cl_ts)
+    html_js +=  "var basket = '{}';".format(basket)
+    html_js +=  "var cl_ts = {};".format(cl_feed.cl_ts)
     html_js += "</script>"
 
     html_js += "<script src='{}'></script>".format(CURRENCY_JS)
@@ -451,7 +451,8 @@ def build_resp(event):
     resp = "<!DOCTYPE html>" \
             + "<html lang='en'>" \
             + "<head>" + html_head + "</head>" \
-            + "<body>" + html_body + html_js + "</body>" \
+            + "<body>" + html_body + "</body>" \
+            + html_js \
             + "</html>"
 
     return resp
