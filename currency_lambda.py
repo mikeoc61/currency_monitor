@@ -1,5 +1,6 @@
 from decimal import Decimal, getcontext
 from urllib.request import urlopen
+from urllib.error import URLError, HTTPError
 from time import strftime, localtime
 from json import loads
 import logging
@@ -26,11 +27,13 @@ import boto3
 
    Author: Michael O'Connor
 
-   Last update: 01/16/2019
+   Last update: 01/18/2019
 '''
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)          # Set to INFO for more detail
+# Set logging level to INFO for more detail, ERROR for less
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 class CurrencyLayer:
 
@@ -71,21 +74,24 @@ class CurrencyLayer:
         """
         try:
             webUrl = urlopen (self.cl_url)
-        except:
+        except HTTPError as e:
             logger.error('In cl_validate()')
-            logger.error('Unable to open: {}'.format(self.cl_url))
+            logger.error('Unable to open: %s', self.cl_url)
+            logger.error('Error code: %s', e.code)
+            raise Exception
+        except URLError as e:
+            logger.error('Reason: %s', e.reason)
             raise Exception
         else:
             rate_data = webUrl.read()
             self.rate_dict = loads(rate_data.decode('utf-8'))
             if self.rate_dict['success'] is False:
                 logger.error('In cl_validate()')
-                logger.error('Error= {}'.format(self.rate_dict['error']['info']))
+                logger.error('Error= %s', self.rate_dict['error']['info'])
                 raise Exception
             else:
                 self.cl_ts = self.rate_dict['timestamp']
-                logger.info('SUCCESS: In cl_validate(): response= {}'.\
-                             format(self.rate_dict))
+                logger.info('SUCCESS: API response= %s', self.rate_dict)
 
 
     def get_rates(self, spread):
@@ -154,8 +160,7 @@ class CurrencyLayer:
             if not isinstance(cur_rate, Decimal):
                 cur_rate = Decimal(str(cur_rate))
 
-            logger.info('For {}: Old Quote= {} New Quote= {}'.\
-                         format(abbr, old, cur_rate))
+            logger.info('For %s: Old= %s New= %s', abbr, old, cur_rate)
 
             # Format Exchange label and value so we can display with both
             # USD in the numerator and denominator
@@ -209,10 +214,10 @@ class CurrencyLayer:
             # update both the quote and timestamp in the database.
 
             time_delta = (Decimal(self.cl_ts - Decimal(tstamp)))
-            logger.info("{} hours since last database update".\
-                         format(time_delta/(60*60)))
+            logger.info("%s hours since last DB update", time_delta/(60*60))
 
             if time_delta > (24*60*60):
+                logger.info("Updating table: %s for %s", table, abbr)
                 dynamo_update(table, abbr, cur_rate, self.cl_ts)
             else:
                 logger.info("Less than 24 hours since last quote update")
@@ -286,8 +291,7 @@ def db_connect(db_table):
     except:
         logger.error("In db_connect(): Could not connect to DynamoDB.")
     else:
-        logger.info("SUCCESS: {} Table created: {}".\
-                        format(db_table, table.creation_date_time))
+        logger.info("Table: %s created: %s", db_table, table.creation_date_time)
         return table
 
 
@@ -307,9 +311,9 @@ def dynamo_update(table, abbr, rate, tstamp):
             )
     except:
         logger.error("In dynamo_update()")
-        logger.error("Update_item {} response = {}".format(abbr, response))
+        logger.error("Update_item: %s response = %s", abbr, response)
     else:
-        logger.info("SUCCESS: Updated Key= {}".format(abbr))
+        logger.info("Updated Key: %s", abbr)
 
 
 def dynamo_query(table, abbr):
@@ -323,9 +327,7 @@ def dynamo_query(table, abbr):
             )
     except:
         logger.error("In dynamo_query()")
-        logger.error("get_item {} response = {}".format(abbr, response))
-    else:
-        logger.info("SUCCESS: Query Key= {}".format(abbr))
+        logger.error("get_item %s response = %s", abbr, response)
 
     return response['Item']
 
@@ -375,7 +377,7 @@ def build_resp(event):
                 if val:
                     api_spread = Decimal(val)
 
-    logger.info('Currency Basket: {} Spread: {}'.format(basket, api_spread))
+    logger.info('Basket: %s Spread: %s', basket, api_spread)
 
     # Load HTML Header as defined in config file
 
@@ -416,9 +418,9 @@ def build_resp(event):
 
     # Provide button to reset currency basket and spread % to defaults
 
-    html_body +=  "<button class='button' onclick='resetDefaults()'>"
+    html_body += "<button class='button' onclick='resetDefaults()'>"
     html_body +=    "Reset Currencies and Spread"
-    html_body +=  "</button>"
+    html_body += "</button>"
 
     html_body +=  "</section>"       # class = 'center'
     html_body += "</main>"       # class = 'mycontainer'
@@ -429,9 +431,9 @@ def build_resp(event):
     # and convert CL Timestamp un UTC Epoch time to local timezone. Need some
     # small amount handled by Python inline in order to define key variables
 
-    html_js = "<script type='text/javascript'>"
-    html_js +=  "var basket = '{}';".format(basket)
-    html_js +=  "var cl_ts = {};".format(cl_feed.cl_ts)
+    html_js  = "<script type='text/javascript'>"
+    html_js +=   "var basket = '{}';".format(basket)
+    html_js +=   "var cl_ts = {};".format(cl_feed.cl_ts)
     html_js += "</script>"
 
     html_js += "<script src='{}'></script>".format(CURRENCY_JS)
@@ -451,8 +453,7 @@ def build_resp(event):
     resp = "<!DOCTYPE html>" \
             + "<html lang='en'>" \
             + "<head>" + html_head + "</head>" \
-            + "<body>" + html_body + "</body>" \
-            + html_js \
+            + "<body>" + html_body + html_js + "</body>" \
             + "</html>"
 
     return resp
@@ -461,10 +462,8 @@ def build_resp(event):
 def lambda_handler(event, context):
     '''AWS Lambda Event handler'''
 
-    print("In lambda handler")
-
-    logger.info('Event: {}'.format(event))
-    logger.info('Context: {}'.format(context))
+    logger.info('Event: %s', event)
+    logger.info('Context: %s', context)
 
     return build_resp(event)
 
