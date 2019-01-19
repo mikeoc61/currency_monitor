@@ -27,10 +27,11 @@ import boto3
 
    Author: Michael O'Connor
 
-   Last update: 01/18/2019
+   Last update: 01/19/2019
 '''
 
 # Set logging level to INFO for more detail, ERROR for less
+# See CloudWatch service for logging detail
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -219,8 +220,6 @@ class CurrencyLayer:
             if time_delta > (24*60*60):
                 logger.info("Updating table: %s for %s", table, abbr)
                 dynamo_update(table, abbr, cur_rate, self.cl_ts)
-            else:
-                logger.info("Less than 24 hours since last quote update")
 
         rate_html += "</div>"       # class='quotes'
 
@@ -250,15 +249,9 @@ class CurrencyLayer:
         return rate_html
 
 
-    def get_ts(self):
-        '''Simply return timestamp from Currency Layer feed'''
-
-        return self.cl_ts
-
-
     def build_select(self, cl_abbrs):
         '''Loop through basket of currency abbreviations and return with an HTML
-           form a list of currency options to be added to basket.
+           form containing a list of currencies which can be added to basket.
         '''
 
         basket_list = self.basket.split(',')
@@ -335,7 +328,7 @@ def dynamo_query(table, abbr):
 def t_stamp(t):
     '''Utility function to format date and time from passed UNIX time'''
 
-    return(strftime('%d %b %Y %H:%M %Z', localtime(t)))
+    return(strftime('%b %d, %Y, %H:%M %Z', localtime(t)))
 
 
 def fetch_html(url):
@@ -398,6 +391,9 @@ def build_resp(event):
     # If successful, cl_ts will be updated with latest quote timestamp. Call
     # get_rates() method called to convert raw quote date to formatted HTML
 
+    # Note: Javascript is used to replace the UTC time with local time so
+    # we use 'title=' option in <H2> tag to show UTC time when user hovers
+
     try:
         cl_feed = CurrencyLayer(BASE, MODE, CL_KEY, basket)
         cl_feed.cl_validate()
@@ -405,7 +401,9 @@ def build_resp(event):
         html_body += "<h2>Error: unable to instantiate currency_layer()</h2>"
         html_body += "<h3>Please see Lambda CloudWatch Logs</h3>"
     else:
-        html_body += "<h2 id=t_stamp>As of " + t_stamp(cl_feed.cl_ts) + "</h2>"
+        html_body += "<h2 id='t_stamp' title='" + t_stamp(cl_feed.cl_ts) + "'>"
+        html_body += "As of " + t_stamp(cl_feed.cl_ts) + "</h2>"
+
         html_body += cl_feed.get_rates(api_spread)
 
     # Provide button to add new currencies to basket
@@ -429,14 +427,15 @@ def build_resp(event):
 
     # Load Javascript functions used to rebuild Lambda URI, handle user events
     # and convert CL Timestamp un UTC Epoch time to local timezone. Need some
-    # small amount handled by Python inline in order to define key variables
+    # small amount handled by Python inline in order to define key constants
+    # used by Javascript to update timezone to local time and for event handling
 
     html_js  = "<script type='text/javascript'>"
-    html_js +=   "var basket = '{}';".format(basket)
-    html_js +=   "var cl_ts = {};".format(cl_feed.cl_ts)
+    html_js +=   "const BASKET = '" + basket + "';"
+    html_js +=   "const CL_TS = '" + str(cl_feed.cl_ts) + "';"
     html_js += "</script>"
 
-    html_js += "<script src='{}'></script>".format(CURRENCY_JS)
+    html_js += "<script src='" + CURRENCY_JS + "'></script>"
 
     # jQuery (necessary for Bootstrap's JavaScript plugins)
 
