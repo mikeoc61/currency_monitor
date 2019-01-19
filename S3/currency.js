@@ -20,15 +20,17 @@
  *  CL_TS: Currency Layer timestamp return by API call
  */
 
-console.log('Currency basket = ' + BASKET);
-console.log('Currency Layer timestamp = ' + CL_TS);
-
 // Define global constants used in functions below. Using constants
 // as this code reloads and runs once with each button press event
 
 const URL = window.location;
 const URL_BASE = URL.origin + URL.pathname;
 const URL_BASKET = URL_BASE + '?currencies=' + BASKET;
+
+const SPREAD = document.getElementById('spread_input');
+
+console.log('Currency basket = ' + BASKET);
+console.log('Currency spread = ' + SPREAD.value);
 
 // Reset currency basket and spread percentage to defaults
 // by calling Lambda function without optional parameters
@@ -42,20 +44,20 @@ function resetDefaults() {
 // value to form new URL before calling Lambda function
 
 function changeSpread(action) {
-  var sprd = document.getElementById('spread_input').value;
-  var url = URL_BASKET + '&spread=' + sprd;
-  location.replace(url);
+  let newSpread = SPREAD.value;
+  let newUrl = URL_BASKET + '&spread=' + newSpread;
+  location.replace(newUrl);
   }
 
 // Read user selection and append that currency abbr.
 // to the URL Parameter section of URL before calling Lambda function
 
 function addCurrency(action) {
-  var sprd = document.getElementById('spread_input').value;
-  var abbr = document.getElementById('currency_abbr').value;
-  if (abbr) {
-    var url = URL_BASKET + ',' + abbr + '&spread=' + sprd;
-    location.replace(url);
+  var spread = SPREAD.value;
+  var newAbbr = document.getElementById('currency_abbr').value;
+  if (newAbbr) {
+    let newUrl = URL_BASKET + ',' + newAbbr + '&spread=' + spread;
+    location.replace(newUrl);
     } else {
       alert('Please select a currency before submitting');
     }
@@ -93,8 +95,9 @@ addLoadEvent(function() {
   OPTIONS.minute = 'numeric';
   OPTIONS.timeZoneName ='short';
   OPTIONS.hour12 = false;
-  var date = new Date(CL_TS * 1000);
-  var newTS = 'Rates as of ' + date.toLocaleDateString("en-US", OPTIONS);
-  document.getElementById('t_stamp').innerHTML = newTS;
-  console.log('Resetting tstamp to: ' + newTS);
+  let date = new Date(CL_TS * 1000);
+  let newTS = date.toLocaleDateString("en-US", OPTIONS);
+  console.log('Old Header: ' + document.getElementById('t_stamp').outerHTML);
+  document.getElementById('t_stamp').innerHTML = 'Rates as of ' + newTS;
+  console.log('New Header: ' + document.getElementById('t_stamp').outerHTML);
   })
