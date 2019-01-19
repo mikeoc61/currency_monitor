@@ -12,21 +12,19 @@ currencies can be added.
 I've implemented both command line and AWS lambda versions of the program.
 
 - exchange.py is the command line version which displays updates once per hour
-   to the console (terminal). Program also provide a progress bar showing When
+   to the console (terminal). Program also provides a progress bar showing when
    the next update will occur based on timestamp provided by the service.
 
 - lambda.py is a simplified version for AWS lambda that runs once and returns
   results as a formatted Web page. Program uses HTML, CSS and Javascript. Since
   there is no persistent data store used, this version can only display the most
-  recent quotes with no knowledge of how prices have changed over the past 24
-  hours.
+  recent quotes with no knowledge of how prices have changed over time.
 
-- currency_lambda.py is an updated Lambda version which uses AWS DynamoDB service
+- currency_lambda.py is an AWS Lambda version which uses AWS DynamoDB service
   to hold previous currency quote results and timestamps which are compared
   with current quotes to determine if the dollar has strengthened or weakened.
-  If more than 24 hours have elapsed since last database update, the database
-  quote and timestamps are updated with most current info from Currency Layer
-  service. You can view the latest version
+  When the function executes, if more than 24 hours have elapsed since last database update, the database quote and timestamps are then updated with
+  most current data from Currency Layer service. You can view the latest version
   by visiting: https://api.mikeoc.me/service/beta/getExchangeRates
 
 - init_dynamo_table.py is used to initialize the DynamoDB table with Abbreviations,
@@ -36,12 +34,12 @@ I've implemented both command line and AWS lambda versions of the program.
 
 - currency_config.py contains various configuration definitions along with
   currency abbreviations and their associated descriptions. This file is
-  only used with the lambda versions and also references other CSS and HTML files
-  stored remotely on S3 Object storage and loaded at runtime. Copies of these
-  additional files are located in the S3 director.
+  only used with the Lambda versions and also references other CSS and HTML files
+  stored remotely on S3 Object storage which are loaded at runtime. Copies of
+  these additional files are located in the S3 directory.
 
 - The S3 directory contains several HTML, CSS and Javascript files that are
-  linked from or read into the currency_lambda.py. These files should be hosted
+  linked from or read by currency_lambda.py. These files should be hosted
   on AWS S3 or similar Object storage. URL path to each resource is defined in
   the currency_config.py configuration file.
 
