@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 # Define key variables defaults associated with CurrencyLayer web service
 
 CL_KEY = '< your currency layer access key >'
