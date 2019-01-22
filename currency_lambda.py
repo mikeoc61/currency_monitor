@@ -30,7 +30,7 @@ import boto3
 
    Author: Michael O'Connor
 
-   Last update: 01/19/2019
+   Last update: 01/22/2019
 '''
 
 # Set logging level to INFO for more detail, ERROR for less
@@ -335,14 +335,13 @@ def t_stamp(t):
 
 
 def fetch_html(url):
-    '''Given a Web URL, open file, remove whitespace and return as string'''
+    '''Given a Web URL, read and remove leading whitespace, return as string'''
+
     response = []
     with urlopen(url) as html:
         for line in html:
             line = line.decode("utf-8")
-            response.append(line.strip())
-            if not line:
-                continue
+            response.append(line.lstrip())
 
     return ''.join(response)
 
@@ -407,15 +406,15 @@ def build_resp(event):
         html_body += "<h2 id='t_stamp' title='" + t_stamp(cl_feed.cl_ts) + "'>"
         html_body += "As of " + t_stamp(cl_feed.cl_ts) + "</h2>"
 
-        html_body += cl_feed.get_rates(api_spread)
+        html_body += cl_feed.get_rates(api_spread) + "\n"
 
     # Provide button to add new currencies to basket
 
-    html_body += cl_feed.build_select(CURR_ABBRS)
+    html_body += cl_feed.build_select(CURR_ABBRS) + "\n"
 
     # Display list of abbreviation definitions for currency basket
 
-    html_body += cl_feed.get_list(CURR_ABBRS)
+    html_body += cl_feed.get_list(CURR_ABBRS) + "\n"
 
     # Provide button to reset currency basket and spread % to defaults
 
@@ -426,36 +425,37 @@ def build_resp(event):
     html_body +=  "</section>"       # class = 'center'
     html_body += "</main>"       # class = 'mycontainer'
 
-    html_body += fetch_html(CURRENCY_FOOTER)
+    html_body += "\n" + fetch_html(CURRENCY_FOOTER)
 
     # Load Javascript functions used to rebuild Lambda URI, handle user events
     # and convert CL Timestamp un UTC Epoch time to local timezone. Need some
     # small amount handled by Python inline in order to define key constants
     # used by Javascript to update timezone to local time and for event handling
 
-    html_js  = "<script type='text/javascript'>"
+    html_js  = "<script>"
     html_js +=   "const BASKET = '" + basket + "';"
     html_js +=   "const CL_TS = '" + str(cl_feed.cl_ts) + "';"
-    html_js += "</script>"
+    html_js += "</script>\n"
 
-    html_js += "<script src='" + CURRENCY_JS + "'></script>"
+    html_js += "<script src='" + CURRENCY_JS + "'></script>\n"
 
     # jQuery (necessary for Bootstrap's JavaScript plugins)
 
-    html_js += "<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js'></script>"
+    html_js += "<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js'></script>\n"
 
     # Include all compiled Bootstrap plugins, or include individual files as needed
 
-    html_js += "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js' crossorigin='anonymous'></script>"
+    html_js += "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js' crossorigin='anonymous'></script>\n"
 
     # Assemble DOM and return to caller, either main() or lambda_handler()
     # main() will then output code to stdout and lambda_handler() will return
     # output HTML/CSS/JS to trigger function, typically API Gateway -> browser
 
-    resp = "<!DOCTYPE html>" \
-            + "<html lang='en'>" \
-            + "<head>" + html_head + "</head>" \
-            + "<body>" + html_body + html_js + "</body>" \
+    resp = "<!DOCTYPE html>\n" \
+            + "<html lang='en'>\n" \
+            + "<head>" + html_head + "</head>\n" \
+            + "<body>" + html_body + "\n" \
+            + html_js + "</body>\n" \
             + "</html>"
 
     return resp
@@ -468,7 +468,6 @@ def lambda_handler(event, context):
     logger.info('Context: %s', context)
 
     return build_resp(event)
-
 
 def main():
     '''Main() used to simulate lambda event handler. Constructs event dict,
