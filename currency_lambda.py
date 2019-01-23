@@ -13,25 +13,25 @@ import boto3
    Builds a web page based on user specified URI and Currency Exchange rates.
    Allows user to specify spread percentage and add new currencies from a large
    basket of international currencies supported by the Currency Layer web service.
-
-   Program utilizes the following external data sources:
-
-   1) Currency Layer Exchange Rate service for latest exchange rates
-   2) AWS DynamoDB database to store historical rates and timestamps
-   3) AWS API Gateway to provide a formatted query and response to a client
-   4) AWS S3 to store CSS stylesheet, HTML footer and nav bar, and Javascript
-
-   Program utilizes the following technologies:
-
-   1) Python 3 programming language for logic and to generate HTML
-   2) HTML, CSS and Javascript to format the resulting web page
-   3) AWS Boto3 and DynamodDB as a persistent data store
-   4) AWS Lambda and API Gateway to instantiate and access the function
-
-   Author: Michael O'Connor
-
-   Last update: 01/22/2019
 '''
+
+# Program utilizes the following external data sources:
+#
+# 1) Currency Layer Exchange Rate service for latest exchange rates
+# 2) AWS DynamoDB database to store historical rates and timestamps
+# 3) AWS API Gateway to provide a formatted query and response to a client
+# 4) AWS S3 to store CSS stylesheet, HTML footer and nav bar, and Javascript
+#
+# Program utilizes the following technologies:
+#
+# 1) Python 3 programming language for logic and to generate HTML
+# 2) HTML, CSS and Javascript to format the resulting web page
+# 3) AWS Boto3 and DynamodDB as a persistent data store
+# 4) AWS Lambda and API Gateway to instantiate and access the function
+#
+# Author: Michael O'Connor
+#
+# Last update: 01/22/2019
 
 # Set logging level to INFO for more detail, ERROR for less
 # See CloudWatch service for logging detail
