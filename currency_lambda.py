@@ -9,11 +9,11 @@ from json import loads
 import logging
 import boto3
 
-'''Currency Exchange Rate program deployed as AWS Lambda function.
+"""Currency Exchange Rate program deployed as AWS Lambda function.
    Builds a web page based on user specified URI and Currency Exchange rates.
    Allows user to specify spread percentage and add new currencies from a large
    basket of international currencies supported by the Currency Layer web service.
-'''
+"""
 
 # Program utilizes the following external data sources:
 #

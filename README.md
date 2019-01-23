@@ -1,4 +1,6 @@
-# currency_monitor
+# Currency Monitoring Project
+
+![Screenshot image](./CurrencyEx.jpg)
 
 Currency Monitor provides an easy way to monitor a basket of foreign currencies.
 Using the Currency Layer Web Service, the program queries the service for the
