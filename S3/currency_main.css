@@ -1,7 +1,7 @@
 /*
   CSS Styles for Currency Exchange program
 
-  Last Update: 1/7/19
+  Last Update: 1/30/19
 */
 
 body {
@@ -10,16 +10,17 @@ body {
     width: 95vw; margin: 0 auto;
     min-width: min-content;
     min-height: min-content;
+    max-width: 780px;
     }
 
 p {
-  font-size: 2.4vmin;
-  padding: .5vh;
+  font-size: 2vmin;
+  /* padding: .5vh; */
   margin: 1vh;
   }
 
 h1, h2, h3, h4, h5, h6 {
-  text-decoration: underline;
+  text-decoration: none;
   text-align: center;
   color: #d9b826;
 }
@@ -32,7 +33,7 @@ h1 {
 
 h2 {
   font-size: 3.4vmin;
-  margin: 0px 0 .5em 0;
+  margin: 1em 0 .5em 0;
   }
 
 h3 {
@@ -70,7 +71,7 @@ label {
 }
 
 .quotes pre {
-  line-height: .5em;
+  line-height: .6em;
   overflow: visible;
   font-size: 2.4vmin;
   color: white;
@@ -122,6 +123,18 @@ select[type=text] {
 
 select[type=text]{
   width: 10em;
+}
+
+/* Abbreviations section */
+
+.abbr p {
+  font-size: 2.5vmin;
+  line-height: 1.3em;
+  margin: 0;
+}
+
+.reset {
+  margin-top: 1.5em;
 }
 
 /* Used for footer section */
