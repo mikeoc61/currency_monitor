@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 from decimal import Decimal, getcontext
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
@@ -9,12 +6,14 @@ from json import loads
 import logging
 import boto3
 
-"""Currency Exchange Rate program deployed as AWS Lambda function.
-   Builds a web page based on user specified URI and Currency Exchange rates.
-   Allows user to specify spread percentage and add new currencies from a large
-   basket of international currencies supported by the Currency Layer web service.
-"""
+'''Currency Exchange Rate program deployed as AWS Lambda function. Returns
+   a web page based on URL options and an external Currency Exchange service.
+   User can specify spread percentage and add new currencies from a large
+   basket of currency options supported by the Currency Layer web service.
+'''
 
+################################################################################
+#
 # Program utilizes the following external data sources:
 #
 # 1) Currency Layer Exchange Rate service for latest exchange rates
@@ -31,13 +30,15 @@ import boto3
 #
 # Author: Michael O'Connor
 #
-# Last update: 01/22/2019
+# Last update: 01/30/2019
+#
+################################################################################
 
 # Set logging level to INFO for more detail, ERROR for less
 # See CloudWatch service for logging detail
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
 
 class CurrencyLayer:
 
@@ -76,6 +77,7 @@ class CurrencyLayer:
            quote timestamp. If unsuccessful, log errors to CloudWatch and
            raise exception.
         """
+
         try:
             webUrl = urlopen (self.cl_url)
         except HTTPError as e:
@@ -230,12 +232,17 @@ class CurrencyLayer:
 
 
     def get_list(self, cl_abbrs):
-        '''Loop through basket of currency abbreviations and return with HTML
-           list of corresponding definitions. If specific exchange abbreviation
-           is specified multiple times, don't repeat in list.
+        '''Loop through basket of currency abbreviations and return list of
+           corresponding definitions.
         '''
 
-        rate_html = "<h2>Abbreviations</h2>"
+        # If specific exchange abbreviation is specified multiple times, don't
+        # repeat in list. Note this routine uses Bootstrap classes to display
+        # multiple columns on wider displays.
+
+        rate_html = "<h2>Currency Abbreviations</h2>"
+        rate_html += "<div class='container-fluid'>"
+        rate_html +=  "<div class='abbr row'>"
 
         basket_list = self.basket.split(',')
 
@@ -244,10 +251,12 @@ class CurrencyLayer:
         for abbr in basket_list:
             if abbr not in unique:
                 unique.append(abbr)
-                if abbr in cl_abbrs:
-                    rate_html += "<p>{} = {}</p>".format(abbr, cl_abbrs[abbr])
-                else:
-                    rate_html += "<p>{} = {}</p>".format(abbr, "Unknown")
+                rate_html += "<section class='col-sm-6'>"
+                desc = cl_abbrs[abbr] if (abbr in cl_abbrs) else "Unknown"
+                rate_html += "<p>{} = {}</p>".format(abbr, desc)
+                rate_html += "</section>"
+
+        rate_html += "</div></div><br>"     # class=container and row
 
         return rate_html
 
@@ -279,7 +288,7 @@ class CurrencyLayer:
 
 
 def db_connect(db_table):
-    '''Confirm access to DynamoDB and return table object'''
+    '''Confirm access to specified DynamoDB table and return table object'''
 
     try:
         dynamo_db = boto3.resource('dynamodb')
@@ -292,10 +301,8 @@ def db_connect(db_table):
 
 
 def dynamo_update(table, abbr, rate, tstamp):
-    '''Update DynamoDB values with provided Abbr:Rate (key:value) pair.
-       Convert rates to type Decimal before updating by first converting
-       rate value to type str.
-    '''
+    '''Update DynamoDB table with specified rate and timestamp using abbr key'''
+
     try:
         response = table.update_item(
             Key={'Abbr': abbr},
@@ -306,14 +313,13 @@ def dynamo_update(table, abbr, rate, tstamp):
                 }
             )
     except:
-        logger.error("In dynamo_update()")
         logger.error("Update_item: %s response = %s", abbr, response)
     else:
         logger.info("Updated Key: %s", abbr)
 
 
 def dynamo_query(table, abbr):
-    '''For a given table value, query database and return result'''
+    '''For a given table key, query database and return associated values'''
 
     try:
         response = table.get_item(
@@ -347,10 +353,8 @@ def fetch_html(url):
 
 
 def build_resp(event):
-    '''Format the Head, Body and Script sections of the DOM including any CSS
-       formatting to apply to the remainder of the document. Break into multiple
-       lines for improved readability
-    '''
+    '''Format the Head, Body and Script sections of the DOM including any CSS'''
+
     # Import variable definitions associated with CurrencyLayer service
 
     from currency_config import CL_KEY, BASE, MODE, basket, api_spread
@@ -361,8 +365,10 @@ def build_resp(event):
 
     try:
         options = event['params']['querystring']
+        if not options:
+            logger.info('No optional parameters found, using defaults')
     except:
-        options = False
+        logger.critical('Error parsing event detail')
     else:
         for key, val in options.items():
             if key.lower() == "currencies":
@@ -374,6 +380,11 @@ def build_resp(event):
 
     logger.info('Basket: %s Spread: %s', basket, api_spread)
 
+    try:
+        logger.info('Client IP address is: %s', event['context']['source-ip'])
+    except:
+        logger.error('Unable to parse client IP address')
+
     # Load HTML Header as defined in config file
 
     html_head = fetch_html(CURRENCY_HEAD_HTML)
@@ -382,9 +393,11 @@ def build_resp(event):
 
     html_head += "<link rel='stylesheet' href='{}'>".format(CURRENCY_MAIN_CSS)
 
-    # Build main HTML body of program
+    # Place a Navigation bar at top of page
 
     html_body = fetch_html(CURRENCY_NAV_BAR)
+
+    # Build main HTML body of program
 
     html_body += "<main class='mycontainer'>"
     html_body +=  "<section class='center' style='margin-top: 70px'>"
@@ -400,8 +413,8 @@ def build_resp(event):
         cl_feed = CurrencyLayer(BASE, MODE, CL_KEY, basket)
         cl_feed.cl_validate()
     except:
-        html_body += "<h2>Error: unable to instantiate currency_layer()</h2>"
-        html_body += "<h3>Please see Lambda CloudWatch Logs</h3>"
+        html_body += "<h2>Error when attempting to access Rate Service</h2>"
+        html_body += "<h3>Please see CloudWatch Logs for detail</h3>"
     else:
         html_body += "<h2 id='t_stamp' title='" + t_stamp(cl_feed.cl_ts) + "'>"
         html_body += "As of " + t_stamp(cl_feed.cl_ts) + "</h2>"
@@ -418,19 +431,20 @@ def build_resp(event):
 
     # Provide button to reset currency basket and spread % to defaults
 
-    html_body += "<button class='button' onclick='resetDefaults()'>"
+    html_body += "<button class='reset button' onclick='resetDefaults()'>"
     html_body +=    "Reset Currencies and Spread"
     html_body += "</button>"
 
     html_body +=  "</section>"       # class = 'center'
     html_body += "</main>"       # class = 'mycontainer'
 
+    # Add a footer section to end of page
+
     html_body += "\n" + fetch_html(CURRENCY_FOOTER)
 
-    # Load Javascript functions used to rebuild Lambda URI, handle user events
-    # and convert CL Timestamp un UTC Epoch time to local timezone. Need some
-    # small amount handled by Python inline in order to define key constants
-    # used by Javascript to update timezone to local time and for event handling
+    # Javascript used to rebuild Lambda URI, handle user events and convert
+    # UTC Epoch timestamp to user's local timezone. Initialize key variables
+    # used by functions defined in external .js file as defined by CURRENCY_JS
 
     html_js  = "<script>"
     html_js +=   "const BASKET = '" + basket + "';"
@@ -439,11 +453,11 @@ def build_resp(event):
 
     html_js += "<script src='" + CURRENCY_JS + "'></script>\n"
 
-    # jQuery (necessary for Bootstrap's JavaScript plugins)
+    # Load jQuery scripts from CDN (necessary for Bootstrap's JavaScript plugins)
 
     html_js += "<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js'></script>\n"
 
-    # Include all compiled Bootstrap plugins, or include individual files as needed
+    # Include all compiled Bootstrap plugins using external CDN
 
     html_js += "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js' crossorigin='anonymous'></script>\n"
 
@@ -468,26 +482,3 @@ def lambda_handler(event, context):
     logger.info('Context: %s', context)
 
     return build_resp(event)
-
-def main():
-    '''Main() used to simulate lambda event handler. Constructs event dict,
-       calls build_resp() and prints HTML/CSS/Javascript to console which can
-       then be directed to a file and opened with a web browser.
-    '''
-
-    event = {
-        'params': {
-            'querystring': {
-                'currencies': '',
-                'spread': '1.00'
-                }
-            }
-        }
-
-    print(build_resp(event))
-
-
-if __name__ == '__main__':
-    """When invoked from shell, invoke main() function"""
-
-    main()
