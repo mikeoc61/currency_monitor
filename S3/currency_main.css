@@ -140,6 +140,7 @@ select[type=text]{
   transition: all 0.25s;
   color: #d9b826;
   background-color: #5600bb;
+  border-color: #5600bb;
 }
 
 .abbr-btn:hover{color:white; background-color:#5600bb;}
