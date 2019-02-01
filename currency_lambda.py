@@ -359,7 +359,8 @@ def build_resp(event):
 
     from currency_config import CL_KEY, BASE, MODE, basket, api_spread
     from currency_config import CURR_ABBRS, CURRENCY_HEAD_HTML, CURRENCY_NAV_BAR
-    from currency_config import CURRENCY_FOOTER, CURRENCY_JS, CURRENCY_MAIN_CSS
+    from currency_config import CURRENCY_FOOTER, CURRENCY_JS
+    from currency_config import CURRENCY_CSS, CURRENCY_ICO
 
     # If options passed as URL parameters, use to replace default values
 
@@ -389,9 +390,13 @@ def build_resp(event):
 
     html_head = fetch_html(CURRENCY_HEAD_HTML)
 
-    # Load CSS Stylesheet as defined in config file
+    # Load CSS Stylesheet & Favicon as defined in config file
 
-    html_head += "<link rel='stylesheet' href='{}'>".format(CURRENCY_MAIN_CSS)
+    CSS_LINK = "rel='stylesheet' type='text/css' href='{}'".format(CURRENCY_CSS)
+    ICO_LINK = "rel='icon' type='image/x-icon' href='{}'".format(CURRENCY_ICO)
+
+    html_head += "<link " + CSS_LINK + ">"
+    html_head += "<link " + ICO_LINK + ">"
 
     # Place a Navigation bar at top of page
 

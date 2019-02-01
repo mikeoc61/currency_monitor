@@ -13,7 +13,8 @@ api_spread = 1.0                            # Default spread = 1.0%
 
 S3_BASE = '<URL representing S3 folder object>'
 
-CURRENCY_MAIN_CSS = S3_BASE + 'currency_main.css'
+CURRENCY_CSS = S3_BASE + 'currency_main.css'
+CURRENCY_ICO = S3_BASE + 'favicon.ico'
 CURRENCY_HEAD_HTML = S3_BASE + 'currency_head.html'
 CURRENCY_NAV_BAR = S3_BASE + 'currency_navbar.html'
 CURRENCY_FOOTER = S3_BASE + 'currency_footer.html'
