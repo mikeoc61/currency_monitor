@@ -26,8 +26,8 @@ I've implemented both command line and AWS lambda versions of the program.
   to hold previous currency quote results and timestamps which are compared
   with current quotes to determine if the dollar has strengthened or weakened.
   When the function executes, if more than 24 hours have elapsed since last database update, the database quote and timestamps are then updated with
-  most current data from Currency Layer service. You can view the latest version
-  by visiting: https://api.mikeoc.me/service/beta/getExchangeRates
+  most current data from Currency Layer service. You can view the latest
+  version by visiting: https://api.mikeoc.me/service/beta/CurrencyExDB
 
 - init_dynamo_table.py is used to initialize the DynamoDB table with Abbreviations,
   Current Rates and Timestamp for each supported Currency. Run this once after
