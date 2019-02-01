@@ -256,7 +256,7 @@ class CurrencyLayer:
                 rate_html += "<p>{} = {}</p>".format(abbr, desc)
                 rate_html += "</section>"
 
-        rate_html += "</div></div><div>"     # collapse, container, row
+        rate_html += "</div></div></div>"     # collapse, container, row
 
         return rate_html
 
@@ -489,4 +489,3 @@ def lambda_handler(event, context):
     logger.info('Context: %s', context)
 
     return build_resp(event)
-    

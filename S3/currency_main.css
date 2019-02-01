@@ -142,7 +142,7 @@ select[type=text]{
   background-color: #5600bb;
 }
 
-.abbr-btn:hover{color:white; border-color:#d9b826;}
+.abbr-btn:hover{color:white; background-color:#5600bb;}
 
 /* Style Abbreviation content */
 
