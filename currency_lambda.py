@@ -19,18 +19,18 @@ import boto3
 # 1) Currency Layer Exchange Rate service for latest exchange rates
 # 2) AWS DynamoDB database to store historical rates and timestamps
 # 3) AWS API Gateway to provide a formatted query and response to a client
-# 4) AWS S3 to store CSS stylesheet, HTML footer and nav bar, and Javascript
+# 4) AWS S3 to store CSS stylesheet, HTML header, footer, nav bar, and Javascript
 #
 # Program utilizes the following technologies:
 #
 # 1) Python 3 programming language for logic and to generate HTML
-# 2) HTML, CSS and Javascript to format the resulting web page
+# 2) HTML, CSS, Bootstrap and Javascript to format the resulting web page
 # 3) AWS Boto3 and DynamodDB as a persistent data store
 # 4) AWS Lambda and API Gateway to instantiate and access the function
 #
 # Author: Michael O'Connor
 #
-# Last update: 01/30/2019
+# Last update: 02/01/2019
 #
 ################################################################################
 
@@ -120,7 +120,7 @@ class CurrencyLayer:
         rate_html += "<input id='spread_input' type='number' min='.10' "
         rate_html +=  "max='2.0' step='.05' size='4' maxlength='4' "
         rate_html +=  "value='{:3.2f}'>".format(spread)
-        rate_html += "<input type='submit' class='button'>"
+        rate_html += "<input type='submit' class='mybutton'>"
         rate_html += "</form></div>"
 
         spread = spread / 100               # convert to percentage
@@ -240,7 +240,7 @@ class CurrencyLayer:
         # repeat in list. Note this routine uses Bootstrap classes to display
         # multiple columns on wider displays.
 
-        rate_html = "<h2>Currency Abbreviations</h2>"
+        rate_html = "<div id='abbreviations' class='collapse'>"
         rate_html += "<div class='container-fluid'>"
         rate_html +=  "<div class='abbr row'>"
 
@@ -256,7 +256,7 @@ class CurrencyLayer:
                 rate_html += "<p>{} = {}</p>".format(abbr, desc)
                 rate_html += "</section>"
 
-        rate_html += "</div></div><br>"     # class=container and row
+        rate_html += "</div></div><div>"     # collapse, container, row
 
         return rate_html
 
@@ -281,7 +281,7 @@ class CurrencyLayer:
                                 format(abbr, cl_abbrs[abbr])
 
         select_html += "</select>"
-        select_html += "<input type='submit' class='button' onclick = '...'>"
+        select_html += "<input type='submit' class='mybutton'>"
         select_html += "</form></div>"
 
         return select_html
@@ -427,11 +427,18 @@ def build_resp(event):
 
     # Display list of abbreviation definitions for currency basket
 
-    html_body += cl_feed.get_list(CURR_ABBRS) + "\n"
+    html_body += "<div class='text-center'>"
+    html_body +=  "<button class='abbr-btn' data-toggle='collapse' "
+    html_body +=    "data-target='#abbreviations' title='Toggle Definitions'>"
+    html_body +=    "Currency Abbreviations"
+    html_body +=  "</button>"
+    html_body += "</div>"
+
+    html_body += cl_feed.get_list(CURR_ABBRS)
 
     # Provide button to reset currency basket and spread % to defaults
 
-    html_body += "<button class='reset button' onclick='resetDefaults()'>"
+    html_body += "<button class='reset mybutton' onclick='resetDefaults()'>"
     html_body +=    "Reset Currencies and Spread"
     html_body += "</button>"
 

@@ -1,7 +1,7 @@
 /*
   CSS Styles for Currency Exchange program
 
-  Last Update: 1/30/19
+  Last Update: 2/01/19
 */
 
 body {
@@ -91,21 +91,22 @@ label {
   display: inline-block;
   }
 
-.button {
+/* Style Spread and Add Currency Submit Buttons */
+
+.mybutton {
   padding: .5em .4em;
   margin: .3em .4em;
   vertical-align: middle;
   font-size: 2.5vmin;
   border-radius: 8px;
-  cursor: pointer;
   text-decoration: none;
   transition: all 0.25s;
   color: black;
   background-color: #d9b826;
 }
 
-.button:hover{color:white; border-color:#d9b826;}
-.button:hover{background-color:#5600bb;}
+.mybutton:hover{color:white; border-color:#d9b826;}
+.mybutton:hover{background-color:#5600bb;}
 
 input[type=number],
 input[type=text],
@@ -126,6 +127,24 @@ select[type=text]{
 }
 
 /* Abbreviations section */
+
+/* Style Collapsable Abbreviation Button */
+
+.abbr-btn {
+  padding: .5em .4em;
+  margin: .3em .4em;
+  vertical-align: middle;
+  font-size: 3vmin;
+  border: none;
+  text-decoration: none;
+  transition: all 0.25s;
+  color: #d9b826;
+  background-color: #5600bb;
+}
+
+.abbr-btn:hover{color:white; border-color:#d9b826;}
+
+/* Style Abbreviation content */
 
 .abbr p {
   font-size: 2.5vmin;
