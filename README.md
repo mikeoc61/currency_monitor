@@ -8,6 +8,9 @@ latest quotations relative to the US dollar (USD) and displays results. Using th
 free tier, price quotes are guaranteed to be no more than 60 minutes old.
 More frequent updates are available at higher price tiers.
 
+Note: Primary change to this 2.0 version is that I used Bootstrap to make the
+Currency Abbreviations Definition section a collapsable button.
+
 The initial or default basket of currencies is configurable and up to 168
 currencies can be added.
 
